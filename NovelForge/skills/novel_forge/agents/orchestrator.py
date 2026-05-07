@@ -435,6 +435,72 @@ class OrchestratorAgent:
         
         return results
     
+    def audit_chapter(
+        self,
+        chapter_num: int,
+        volume_num: int = 1
+    ) -> Dict[str, Any]:
+        """
+        审计指定章节
+        
+        Args:
+            chapter_num: 章节号
+            volume_num: 卷号
+            
+        Returns:
+            审计报告
+        """
+        ch = self.project.chapters.get(chapter_num)
+        
+        if not ch:
+            return {"error": f"章节 {chapter_num} 不存在"}
+        
+        draft = ch.content if hasattr(ch, 'content') else str(ch)
+        
+        context = self._prepare_context(chapter_num, volume_num)
+        
+        return self.auditor.audit_chapter(
+            chapter_num=chapter_num,
+            draft=draft,
+            context=context
+        )
+    
+    def revise_chapter(
+        self,
+        chapter_num: int,
+        volume_num: int = 1,
+        mode: str = "polish"
+    ) -> Dict[str, Any]:
+        """
+        修订指定章节
+        
+        Args:
+            chapter_num: 章节号
+            volume_num: 卷号
+            mode: 修订模式
+            
+        Returns:
+            修订结果
+        """
+        ch = self.project.chapters.get(chapter_num)
+        
+        if not ch:
+            return {"error": f"章节 {chapter_num} 不存在"}
+        
+        draft = ch.content if hasattr(ch, 'content') else str(ch)
+        
+        audit_result = self.auditor.audit_chapter(
+            chapter_num=chapter_num,
+            draft=draft,
+            context=None
+        )
+        
+        return self.reviser.revise(
+            original=draft,
+            audit_report=audit_result,
+            mode=mode
+        )
+    
     def rollback_chapter(
         self,
         chapter_num: int,
