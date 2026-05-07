@@ -16,6 +16,21 @@
 | 📚 分卷管理体系 | 百万字分卷管理，每卷独立闭环又与全书联动 |
 | 🔄 自适应优化 | 读者反馈驱动创作方向动态调整 |
 | 🎨 多题材支持 | 玄幻、仙侠、都市、科幻、恐怖、通用六大题材 |
+| 🔧 多模型支持 | OpenAI/Anthropic/Ollama/HuggingFace/Qwen/Zhipu/DeepSeek |
+
+### 支持的LLM提供商
+
+| 提供商 | 类型 | 默认模型 | 基础URL |
+|--------|------|----------|----------|
+| OpenAI | 云端API | gpt-4 | https://api.openai.com/v1 |
+| Anthropic | 云端API | claude-3-opus | https://api.anthropic.com/v1 |
+| Ollama | 本地 | llama3 | http://localhost:11434/v1 |
+| HuggingFace | 本地 | Llama-2-7b | - |
+| DeepSeek | 云端API | deepseek-chat | https://api.deepseek.com/v1 |
+| Qwen | 云端API | qwen-plus | https://api.qwenlm.com/v1 |
+| Zhipu | 云端API | glm-4 | https://open.bigmodel.cn/api/paas/v4 |
+| API2D | 代理API | gpt-4 | https://api2d.com/v1 |
+| Custom | 自定义 | - | 用户指定 |
 
 ### 技术架构
 
@@ -99,11 +114,89 @@ NovelForge/
 
 ### 安装与使用
 
-```markdown
-1. 将 novel_forge 目录放入你的AI助手skills目录
-2. 配置 LLM API（如 OpenAI/Claude/DashScope）
-3. 运行 python novel_manager.py create 创建新书
-4. 运行 python main.py write 生成章节
+```bash
+# 安装依赖
+pip install pyyaml requests numpy tiktoken
+
+# 可选：安装本地模型支持
+pip install transformers accelerate bitsandbytes
+```
+
+### 配置说明
+
+#### 使用环境变量
+
+```bash
+# OpenAI
+export OPENAI_API_KEY="your-api-key"
+
+# Anthropic
+export ANTHROPIC_API_KEY="your-api-key"
+export LLM_PROVIDER="anthropic"
+
+# Ollama（本地）
+export LLM_PROVIDER="ollama"
+export LLM_MODEL="llama3"
+
+# 自定义模型
+export LLM_PROVIDER="custom"
+export LLM_MODEL="your-model"
+export LLM_BASE_URL="http://localhost:8000/v1"
+```
+
+#### 使用配置文件
+
+创建 `config.yaml`:
+
+```yaml
+llm_provider: ollama
+model: llama3
+base_url: http://localhost:11434/v1
+temperature: 0.7
+max_tokens: 4096
+```
+
+#### CLI命令
+
+```bash
+# 创建新书
+python main.py create --title "我的小说" --genre xuanhuan
+
+# 指定模型提供商
+python main.py write --project ./novels/我的小说 --chapter 1 \
+  --provider ollama --model llama3
+
+# 使用自定义API
+python main.py write --project ./novels/我的小说 --chapter 1 \
+  --provider custom --base-url http://localhost:8000/v1 \
+  --model my-model --api-key my-key
+```
+
+### 本地模型使用
+
+#### Ollama
+
+```bash
+# 安装Ollama
+curl -fsSL https://ollama.com/install.sh | sh
+
+# 下载模型
+ollama pull llama3
+
+# 运行服务（默认端口11434）
+ollama serve
+
+# 使用
+python main.py write --project ./novels/my_novel --chapter 1 \
+  --provider ollama --model llama3
+```
+
+#### HuggingFace
+
+```bash
+# 使用本地HuggingFace模型
+python main.py write --project ./novels/my_novel --chapter 1 \
+  --provider huggingface --model meta-llama/Llama-2-7b-chat-hf
 ```
 
 ### 适用场景

@@ -15,30 +15,78 @@ sys.path.insert(0, str(Path(__file__).parent / "skills"))
 from skills.novel_forge import NovelForge, ForgeConfig
 
 
-def load_config(config_path: Optional[str] = None) -> ForgeConfig:
+def load_config(
+    config_path: Optional[str] = None,
+    provider: Optional[str] = None,
+    api_key: Optional[str] = None,
+    base_url: Optional[str] = None,
+    model: Optional[str] = None,
+    temperature: Optional[float] = None,
+    max_tokens: Optional[int] = None
+) -> ForgeConfig:
     """加载配置"""
     if config_path and Path(config_path).exists():
         import yaml
         with open(config_path, 'r', encoding='utf-8') as f:
             data = yaml.safe_load(f)
+        
+        if provider:
+            data['llm_provider'] = provider
+        if api_key:
+            data['api_key'] = api_key
+        if base_url:
+            data['base_url'] = base_url
+        if model:
+            data['model'] = model
+        if temperature:
+            data['temperature'] = temperature
+        if max_tokens:
+            data['max_tokens'] = max_tokens
+        
         return ForgeConfig(**data)
     
-    api_key = os.getenv("OPENAI_API_KEY", "")
-    if not api_key:
-        api_key = os.getenv("ANTHROPIC_API_KEY", "")
+    env_provider = os.getenv("LLM_PROVIDER", "openai")
+    env_api_key = os.getenv("OPENAI_API_KEY", "")
+    if not env_api_key:
+        env_api_key = os.getenv("ANTHROPIC_API_KEY", "")
+        if not env_api_key:
+            env_api_key = os.getenv("API_KEY", "")
+    
+    defaults = {
+        "openai": {"model": "gpt-4", "base_url": "https://api.openai.com/v1"},
+        "anthropic": {"model": "claude-3-opus-20240229", "base_url": "https://api.anthropic.com/v1"},
+        "ollama": {"model": "llama3", "base_url": "http://localhost:11434/v1"},
+        "huggingface": {"model": "meta-llama/Llama-2-7b-chat-hf", "base_url": ""},
+        "api2d": {"model": "gpt-4", "base_url": "https://api2d.com/v1"},
+        "deepseek": {"model": "deepseek-chat", "base_url": "https://api.deepseek.com/v1"},
+        "qwen": {"model": "qwen-plus", "base_url": "https://api.qwenlm.com/v1"},
+        "zhipu": {"model": "glm-4", "base_url": "https://open.bigmodel.cn/api/paas/v4"},
+        "custom": {"model": "gpt-4", "base_url": "http://localhost:8000/v1"},
+    }
+    
+    default = defaults.get(provider or env_provider, defaults["openai"])
     
     return ForgeConfig(
-        llm_provider="openai" if "OPENAI" in os.getenv("LLM_PROVIDER", "") else "anthropic",
-        api_key=api_key,
-        model=os.getenv("LLM_MODEL", "gpt-4"),
-        temperature=0.7,
-        max_tokens=4096
+        llm_provider=provider or env_provider,
+        api_key=api_key or env_api_key,
+        base_url=base_url or default["base_url"],
+        model=model or default["model"],
+        temperature=temperature or float(os.getenv("LLM_TEMPERATURE", "0.7")),
+        max_tokens=max_tokens or int(os.getenv("LLM_MAX_TOKENS", "4096"))
     )
 
 
 def cmd_create(args):
     """创建新书"""
-    config = load_config(args.config)
+    config = load_config(
+        args.config,
+        provider=args.provider,
+        api_key=args.api_key,
+        base_url=args.base_url,
+        model=args.model,
+        temperature=args.temperature,
+        max_tokens=args.max_tokens
+    )
     forge = NovelForge(config)
     
     project = forge.create_project(
@@ -58,7 +106,15 @@ def cmd_create(args):
 
 def cmd_generate_settings(args):
     """生成设定"""
-    config = load_config(args.config)
+    config = load_config(
+        args.config,
+        provider=args.provider,
+        api_key=args.api_key,
+        base_url=args.base_url,
+        model=args.model,
+        temperature=args.temperature,
+        max_tokens=args.max_tokens
+    )
     forge = NovelForge(config)
     
     if not args.project:
@@ -78,7 +134,15 @@ def cmd_generate_settings(args):
 
 def cmd_generate_outline(args):
     """生成大纲"""
-    config = load_config(args.config)
+    config = load_config(
+        args.config,
+        provider=args.provider,
+        api_key=args.api_key,
+        base_url=args.base_url,
+        model=args.model,
+        temperature=args.temperature,
+        max_tokens=args.max_tokens
+    )
     forge = NovelForge(config)
     
     if not args.project:
@@ -98,7 +162,15 @@ def cmd_generate_outline(args):
 
 def cmd_write(args):
     """写作章节"""
-    config = load_config(args.config)
+    config = load_config(
+        args.config,
+        provider=args.provider,
+        api_key=args.api_key,
+        base_url=args.base_url,
+        model=args.model,
+        temperature=args.temperature,
+        max_tokens=args.max_tokens
+    )
     forge = NovelForge(config)
     
     if not args.project:
@@ -126,7 +198,15 @@ def cmd_write(args):
 
 def cmd_batch_write(args):
     """批量写作"""
-    config = load_config(args.config)
+    config = load_config(
+        args.config,
+        provider=args.provider,
+        api_key=args.api_key,
+        base_url=args.base_url,
+        model=args.model,
+        temperature=args.temperature,
+        max_tokens=args.max_tokens
+    )
     forge = NovelForge(config)
     
     if not args.project:
@@ -151,7 +231,15 @@ def cmd_batch_write(args):
 
 def cmd_audit(args):
     """审计章节"""
-    config = load_config(args.config)
+    config = load_config(
+        args.config,
+        provider=args.provider,
+        api_key=args.api_key,
+        base_url=args.base_url,
+        model=args.model,
+        temperature=args.temperature,
+        max_tokens=args.max_tokens
+    )
     forge = NovelForge(config)
     
     if not args.project:
@@ -180,7 +268,15 @@ def cmd_audit(args):
 
 def cmd_detect_aigc(args):
     """AIGC检测"""
-    config = load_config(args.config)
+    config = load_config(
+        args.config,
+        provider=args.provider,
+        api_key=args.api_key,
+        base_url=args.base_url,
+        model=args.model,
+        temperature=args.temperature,
+        max_tokens=args.max_tokens
+    )
     forge = NovelForge(config)
     
     if not args.project:
@@ -216,7 +312,15 @@ def cmd_detect_aigc(args):
 
 def cmd_track_hooks(args):
     """伏笔追踪"""
-    config = load_config(args.config)
+    config = load_config(
+        args.config,
+        provider=args.provider,
+        api_key=args.api_key,
+        base_url=args.base_url,
+        model=args.model,
+        temperature=args.temperature,
+        max_tokens=args.max_tokens
+    )
     forge = NovelForge(config)
     
     if not args.project:
@@ -241,7 +345,15 @@ def cmd_track_hooks(args):
 
 def cmd_status(args):
     """查看状态"""
-    config = load_config(args.config)
+    config = load_config(
+        args.config,
+        provider=args.provider,
+        api_key=args.api_key,
+        base_url=args.base_url,
+        model=args.model,
+        temperature=args.temperature,
+        max_tokens=args.max_tokens
+    )
     forge = NovelForge(config)
     
     if not args.project:
@@ -263,7 +375,15 @@ def cmd_status(args):
 
 def cmd_export(args):
     """导出书籍"""
-    config = load_config(args.config)
+    config = load_config(
+        args.config,
+        provider=args.provider,
+        api_key=args.api_key,
+        base_url=args.base_url,
+        model=args.model,
+        temperature=args.temperature,
+        max_tokens=args.max_tokens
+    )
     forge = NovelForge(config)
     
     if not args.project:
@@ -286,6 +406,16 @@ def main():
     )
     
     parser.add_argument("--config", "-c", help="配置文件路径")
+    
+    parser.add_argument("--provider", "-P", choices=[
+        "openai", "anthropic", "custom", "huggingface", "ollama", 
+        "api2d", "deepseek", "qwen", "zhipu"
+    ], help="LLM提供商")
+    parser.add_argument("--api-key", "-K", help="API密钥")
+    parser.add_argument("--base-url", "-U", help="API基础URL")
+    parser.add_argument("--model", "-M", help="模型名称")
+    parser.add_argument("--temperature", "-T", type=float, help="温度参数")
+    parser.add_argument("--max-tokens", "-X", type=int, help="最大token数")
     
     subparsers = parser.add_subparsers(dest="command", help="命令")
     

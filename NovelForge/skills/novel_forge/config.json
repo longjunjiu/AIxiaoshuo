@@ -14,15 +14,108 @@
   "optional_dependencies": {
     "chromadb": ">= 0.4.0",
     "anthropic": ">= 0.18.0",
-    "openai": ">= 1.0.0"
+    "openai": ">= 1.0.0",
+    "transformers": ">= 4.30.0",
+    "accelerate": ">= 0.20.0",
+    "bitsandbytes": ">= 0.40.0"
   },
   "config_schema": {
-    "llm_provider": "openai | anthropic | custom",
-    "api_key": "string (required)",
-    "base_url": "string (optional)",
-    "model": "string (default: gpt-4)",
-    "temperature": "float (default: 0.7)",
-    "max_tokens": "integer (default: 4096)",
-    "embedding_model": "string (optional)"
+    "llm_provider": {
+      "type": "string",
+      "enum": ["openai", "anthropic", "custom", "huggingface", "ollama", "api2d", "deepseek", "qwen", "zhipu"],
+      "default": "openai"
+    },
+    "api_key": "string",
+    "base_url": "string",
+    "model": "string",
+    "temperature": {
+      "type": "float",
+      "minimum": 0,
+      "maximum": 2,
+      "default": 0.7
+    },
+    "max_tokens": {
+      "type": "integer",
+      "minimum": 100,
+      "maximum": 32000,
+      "default": 4096
+    },
+    "top_p": {
+      "type": "float",
+      "minimum": 0,
+      "maximum": 1,
+      "default": 0.9
+    },
+    "frequency_penalty": {
+      "type": "float",
+      "minimum": 0,
+      "maximum": 2,
+      "default": 0.0
+    },
+    "presence_penalty": {
+      "type": "float",
+      "minimum": 0,
+      "maximum": 2,
+      "default": 0.0
+    },
+    "enable_vector_store": "boolean"
+  },
+  "supported_providers": {
+    "openai": {
+      "name": "OpenAI",
+      "default_model": "gpt-4",
+      "default_base_url": "https://api.openai.com/v1",
+      "requires_api_key": true
+    },
+    "anthropic": {
+      "name": "Anthropic",
+      "default_model": "claude-3-opus-20240229",
+      "default_base_url": "https://api.anthropic.com/v1",
+      "requires_api_key": true
+    },
+    "ollama": {
+      "name": "Ollama (本地)",
+      "default_model": "llama3",
+      "default_base_url": "http://localhost:11434/v1",
+      "requires_api_key": false,
+      "description": "本地运行的Ollama模型"
+    },
+    "huggingface": {
+      "name": "Hugging Face (本地)",
+      "default_model": "meta-llama/Llama-2-7b-chat-hf",
+      "default_base_url": "",
+      "requires_api_key": false,
+      "description": "本地运行的Hugging Face模型"
+    },
+    "api2d": {
+      "name": "API2D",
+      "default_model": "gpt-4",
+      "default_base_url": "https://api2d.com/v1",
+      "requires_api_key": true
+    },
+    "deepseek": {
+      "name": "DeepSeek",
+      "default_model": "deepseek-chat",
+      "default_base_url": "https://api.deepseek.com/v1",
+      "requires_api_key": true
+    },
+    "qwen": {
+      "name": "阿里云 Qwen",
+      "default_model": "qwen-plus",
+      "default_base_url": "https://api.qwenlm.com/v1",
+      "requires_api_key": true
+    },
+    "zhipu": {
+      "name": "智谱 AI",
+      "default_model": "glm-4",
+      "default_base_url": "https://open.bigmodel.cn/api/paas/v4",
+      "requires_api_key": true
+    },
+    "custom": {
+      "name": "自定义 API",
+      "default_model": "gpt-4",
+      "default_base_url": "http://localhost:8000/v1",
+      "requires_api_key": true
+    }
   }
 }
