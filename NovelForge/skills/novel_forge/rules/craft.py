@@ -65,7 +65,7 @@ class CraftRules:
         BeatTemplate("灵魂黑夜", 0.75, "内化主题教训", ["准备改变"]),
         BeatTemplate("闯入第三幕", 0.80, "新信息改变一切", ["通常来自B故事"]),
         BeatTemplate("最终对决", 0.90, "解决主要冲突", ["执行新计划"]),
-        BeatTemplate(" "final_image", 0.99, "展示转变", ["与开场镜像"])
+        BeatTemplate("最终镜像", 0.99, "展示转变", ["与开场镜像"])
     ]
     
     # 角色三轴（Sanderson）

@@ -13,7 +13,7 @@ from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, field, asdict
 
 from .novel_manager import NovelManager, NovelProject
-from .agents.orchestrator import Orchestrator
+from .agents.orchestrator import OrchestratorAgent
 from .memory.long_term import LongTermMemory
 from .audit.detector import AIGCDetector
 from .rules.craft import CraftRules
@@ -52,7 +52,7 @@ class NovelForge:
         self.project_path = Path(project_path) if project_path else None
         self.project: Optional[NovelProject] = None
         
-        self.orchestrator: Optional[Orchestrator] = None
+        self.orchestrator: Optional[OrchestratorAgent] = None
         self.long_term_memory: Optional[LongTermMemory] = None
         self.aigc_detector: Optional[AIGCDetector] = None
         
@@ -91,7 +91,7 @@ class NovelForge:
     def _init_agents(self):
         """初始化Agent系统"""
         if self.project:
-            self.orchestrator = Orchestrator(self.project, self.llm, self.config)
+            self.orchestrator = OrchestratorAgent(self.project, self.llm, self.config)
             self.long_term_memory = LongTermMemory(self.project)
             self.aigc_detector = AIGCDetector()
     

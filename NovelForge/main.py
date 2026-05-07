@@ -10,8 +10,9 @@ from pathlib import Path
 from typing import Optional
 
 sys.path.insert(0, str(Path(__file__).parent))
+sys.path.insert(0, str(Path(__file__).parent / "skills"))
 
-from novel_forge import NovelForge, ForgeConfig
+from skills.novel_forge import NovelForge, ForgeConfig
 
 
 def load_config(config_path: Optional[str] = None) -> ForgeConfig:

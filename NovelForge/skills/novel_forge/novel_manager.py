@@ -131,7 +131,7 @@ class NovelManager:
             created_at=datetime.now().isoformat()
         )
         
-        safe_title = NovelProject._sanitize_title(title)
+        safe_title = NovelManager._sanitize_title(title)
         project_path = Path(output_dir) / safe_title
         project.project_path = project_path
         
