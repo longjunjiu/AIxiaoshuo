@@ -60,7 +60,8 @@ class LLMClient:
             "deepseek": "https://api.deepseek.com/v1",
             "qwen": "https://api.qwenlm.com/v1",
             "zhipu": "https://open.bigmodel.cn/api/paas/v4",
-            "nvidia": "https://integrate.api.nvidia.com/v1"
+            "nvidia": "https://integrate.api.nvidia.com/v1",
+            "minimax": "https://api.minimax.chat/v1"
         }
         return defaults.get(self.provider, "https://api.openai.com/v1")
     
@@ -76,7 +77,8 @@ class LLMClient:
             "deepseek": "deepseek-chat",
             "qwen": "qwen-plus",
             "zhipu": "glm-4",
-            "nvidia": "meta/llama-3.1-70b-instruct"
+            "nvidia": "meta/llama-3.1-70b-instruct",
+            "minimax": "MiniMax-Text-01"
         }
         return defaults.get(self.provider, "gpt-4")
     
