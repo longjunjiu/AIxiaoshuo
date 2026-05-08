@@ -1,362 +1,347 @@
 """
-审计员Agent - 质量检查
+审计员机器人 - 质量检查
+参考十大经典网文质量标准
 """
 
-import re
-from typing import Dict, List, Optional, Any
-from ..rules.anti_slop import AntiSlopRules
+from typing import Dict, Any, List
+from dataclasses import dataclass
+
+
+@dataclass
+class AuditResult:
+    """审计结果"""
+    score: float
+    issues: List[str]
+    suggestions: List[str]
+    passed: bool
 
 
 class AuditorAgent:
     """
-    审计员Agent
+    审计员机器人
     
-    负责多维度质量审计：
-    - 连续性检查
-    - 伏笔检查
-    - 节奏检查
-    - 文风检查
-    - AIGC检测
+    参考十大经典网文质量标准：
+    - 《斗破苍穹》- 节奏紧凑、爽点密集
+    - 《凡人修仙传》- 细节严谨、逻辑自洽
+    - 《诡秘之主》- 伏笔回收、悬念迭起
+    - 《雪中悍刀行》- 文笔优美、人物立体
+    - 《诛仙》- 情感真挚、情节感人
     """
     
-    def __init__(self, llm_client, project, anti_slop: Optional[AntiSlopRules] = None):
+    def __init__(self, llm_client=None):
         self.llm = llm_client
-        self.project = project
-        self.anti_slop = anti_slop or AntiSlopRules()
+    
+    def get_system_prompt(self) -> str:
+        return """你是一位顶尖网络小说质量审计师，精通网文质量标准。
+
+【十大经典网文质量标准】
+
+《斗破苍穹》标准：
+- 节奏：紧凑明快，每章有冲突
+- 爽点：密集，打脸干脆
+- 升级：清晰，读者能看懂
+- 核心：憋屈到位，爆发痛快
+
+《凡人修仙传》标准：
+- 严谨：细节自洽，逻辑通顺
+- 节奏：稳扎稳打，不急不躁
+- 资源：交代清楚，不乱开挂
+- 核心：猥琐发育，不浪
+
+《诡秘之主》标准：
+- 伏笔：埋下有回收
+- 悬念：层层递进
+- 世界观：自洽完整
+- 核心：智斗解谜
+
+《雪中悍刀行》标准：
+- 文笔：优美流畅
+- 人物：立体鲜活
+- 情感：家国情怀
+- 核心：江湖情义
+
+《诛仙》标准：
+- 情感：真挚动人
+- 情节：感人肺腑
+- 人物：成长蜕变
+- 核心：爱恨情仇
+
+【审计维度】
+
+1. 剧情逻辑（30分）
+   - 情节发展是否合理
+   - 人物行为是否自洽
+   - 冲突解决是否有逻辑
+
+2. 节奏把控（25分）
+   - 开局是否抓人
+   - 中段是否拖沓
+   - 高潮是否到位
+
+3. 人物塑造（20分）
+   - 主角是否有魅力
+   - 配角是否立体
+   - 对话是否自然
+
+4. 文字质量（15分）
+   - 语句是否通顺
+   - 描写是否生动
+   - 有无错别字
+
+5. 爽点设计（10分）
+   - 是否有爽点
+   - 爽点密度
+   - 憋屈是否到位
+
+【扣分项】
+
+- 开局堆设定：-10分
+- 主角装逼太刻意：-5分
+- 反派智商下线：-5分
+- 情节拖沓：-5分/1000字
+- 逻辑不通：-10分
+- AI味太重：-15分
+
+【加分项】
+
+- 开局炸弹：+5分
+- 反转精彩：+5分
+- 伏笔回收：+5分
+- 情感动人：+5分
+
+请严格按照以上标准进行审计。"""
     
     def audit_chapter(
         self,
+        chapter_content: str,
         chapter_num: int,
-        draft: str,
-        context: Optional[Dict[str, Any]] = None
+        genre: str
+    ) -> AuditResult:
+        """审计章节质量"""
+        if not self.llm:
+            return self._fallback_audit(chapter_content, chapter_num)
+        
+        prompt = f"""请审计第{chapter_num}章的质量：
+
+题材：{genre}
+
+章节内容：
+{chapter_content[:3000]}
+
+请从以下维度评分：
+1. 剧情逻辑（30分）
+2. 节奏把控（25分）
+3. 人物塑造（20分）
+4. 文字质量（15分）
+5. 爽点设计（10分）
+
+总分：100分
+及格线：60分
+
+请给出：
+- 总分
+- 各维度得分
+- 问题列表
+- 改进建议
+"""
+        
+        response = self.llm.generate(
+            system_prompt=self.get_system_prompt(),
+            user_prompt=prompt,
+            max_tokens=1000,
+            temperature=0.5
+        )
+        
+        return self._parse_audit_response(response, chapter_content)
+    
+    def audit_continuity(
+        self,
+        current_chapter: str,
+        previous_chapters: List[str]
     ) -> Dict[str, Any]:
-        """
-        审计章节
-        
-        Args:
-            chapter_num: 章节号
-            draft: 章节草稿
-            context: 上下文信息
-            
-        Returns:
-            审计报告
-        """
-        results = {
-            "chapter": chapter_num,
-            "pass": True,
-            "issues": [],
-            "warnings": [],
-            "scores": {},
-            "aigc_report": None,
-            "recommendations": []
-        }
-        
-        results["aigc_report"] = self.anti_slop.full_detect(draft)
-        
-        continuity_issues = self._check_continuity(draft, chapter_num, context)
-        if continuity_issues:
-            results["issues"].extend(continuity_issues)
-        
-        hook_issues = self._check_hooks(draft, chapter_num, context)
-        if hook_issues:
-            results["warnings"].extend(hook_issues)
-        
-        pacing_issues = self._check_pacing(draft)
-        if pacing_issues:
-            results["warnings"].extend(pacing_issues)
-        
-        voice_issues = self._check_voice(draft)
-        if voice_issues:
-            results["issues"].extend(voice_issues)
-        
-        factual_issues = self._check_facts(draft, chapter_num, context)
-        if factual_issues:
-            results["issues"].extend(factual_issues)
-        
-        results["scores"] = self._calculate_scores(results)
-        results["pass"] = len([i for i in results["issues"] if i.get("severity") == "critical"]) == 0
-        
-        results["recommendations"] = self._generate_recommendations(results)
-        
-        return results
-    
-    def _check_continuity(
-        self,
-        draft: str,
-        chapter_num: int,
-        context: Optional[Dict[str, Any]]
-    ) -> List[Dict[str, Any]]:
-        """检查连续性"""
+        """审计连续性"""
         issues = []
+        suggestions = []
         
-        if not context:
-            return issues
+        prev_text = " ".join(previous_chapters[-3:]) if previous_chapters else ""
         
-        if context.get("character_states"):
-            for char, expected_state in context["character_states"].items():
-                if char in draft:
-                    pass
+        if not prev_text:
+            return {
+                "has_issues": False,
+                "issues": [],
+                "suggestions": ["暂无前文可对比"]
+            }
         
-        if context.get("location"):
-            location = context["location"]
-            location_mentions = len(re.findall(location, draft))
-            if location_mentions == 0:
-                issues.append({
-                    "dimension": "continuity",
-                    "type": "location_missing",
-                    "severity": "warning",
-                    "message": f"未提及场景地点: {location}",
-                    "suggestion": "在场景开头明确位置"
-                })
+        inconsistencies = self._check_basic_continuity(current_chapter, prev_text)
+        issues.extend(inconsistencies)
         
-        return issues
-    
-    def _check_hooks(
-        self,
-        draft: str,
-        chapter_num: int,
-        context: Optional[Dict[str, Any]]
-    ) -> List[Dict[str, Any]]:
-        """检查伏笔"""
-        warnings = []
-        
-        if not context or not context.get("pending_hooks"):
-            return warnings
-        
-        for hook in context["pending_hooks"]:
-            hook_content = hook.get("content", "")
-            if hook_content and hook_content[:20] in draft:
-                warnings.append({
-                    "dimension": "foreshadow",
-                    "type": "hook_recycled",
-                    "severity": "info",
-                    "message": f"伏笔可能已回收: {hook_content[:30]}...",
-                    "hook_id": hook.get("id")
-                })
-        
-        return warnings
-    
-    def _check_pacing(self, draft: str) -> List[Dict[str, Any]]:
-        """检查节奏"""
-        warnings = []
-        
-        paragraphs = [p.strip() for p in draft.split('\n\n') if p.strip()]
-        avg_length = sum(len(p) for p in paragraphs) / len(paragraphs) if paragraphs else 0
-        
-        short_paragraphs = sum(1 for p in paragraphs if len(p) < 50)
-        long_paragraphs = sum(1 for p in paragraphs if len(p) > 500)
-        
-        if short_paragraphs / len(paragraphs) > 0.5 if paragraphs else False:
-            warnings.append({
-                "dimension": "pacing",
-                "type": "too_many_short",
-                "severity": "warning",
-                "message": f"短段落过多 ({short_paragraphs}/{len(paragraphs)})",
-                "suggestion": "增加中等长度段落，改善节奏"
-            })
-        
-        if long_paragraphs / len(paragraphs) > 0.3 if paragraphs else False:
-            warnings.append({
-                "dimension": "pacing",
-                "type": "too_many_long",
-                "severity": "warning",
-                "message": f"长段落过多 ({long_paragraphs}/{len(paragraphs)})",
-                "suggestion": "拆分长段落，提高可读性"
-            })
-        
-        return warnings
-    
-    def _check_voice(self, draft: str) -> List[Dict[str, Any]]:
-        """检查文风"""
-        issues = []
-        
-        tier1_results = self.anti_slop.detect_tier1(draft)
-        for item in tier1_results:
-            issues.append({
-                "dimension": "voice",
-                "type": "ai_word",
-                "severity": "critical",
-                "message": f"发现AI常用词: {item['word']}",
-                "location": f"第{item['line']}行",
-                "suggestion": f"替换为: {item['alternative']}"
-            })
-        
-        not_just = self.anti_slop.detect_not_just_x_but_y(draft)
-        for item in not_just[:5]:
-            issues.append({
-                "dimension": "voice",
-                "type": "formulaic_structure",
-                "severity": "warning",
-                "message": "发现'不只是X，而是Y'句式",
-                "suggestion": "改为更直接简洁的表达"
-            })
-        
-        sentence_uniformity = self.anti_slop.detect_sentence_uniformity(draft)
-        if sentence_uniformity.get("uniform"):
-            issues.append({
-                "dimension": "voice",
-                "type": "uniform_sentences",
-                "severity": "warning",
-                "message": "句子长度过于均匀",
-                "suggestion": "增加句长变化，模仿人类写作节奏"
-            })
-        
-        return issues
-    
-    def _check_facts(
-        self,
-        draft: str,
-        chapter_num: int,
-        context: Optional[Dict[str, Any]]
-    ) -> List[Dict[str, Any]]:
-        """检查事实一致性"""
-        issues = []
-        
-        if not context or not context.get("canon_facts"):
-            return issues
-        
-        for fact in context["canon_facts"][:20]:
-            fact_text = fact.get("fact", "")
-            if fact_text and fact_text[:30] not in draft:
-                source_ch = fact.get("source_chapter", 0)
-                if source_ch > 0 and chapter_num - source_ch <= 3:
-                    issues.append({
-                        "dimension": "fact",
-                        "type": "fact_not_mentioned",
-                        "severity": "warning",
-                        "message": f"前文事实未在当前章提及: {fact_text[:30]}...",
-                        "source": f"第{source_ch}章"
-                    })
-        
-        return issues
-    
-    def _calculate_scores(self, audit_results: Dict[str, Any]) -> Dict[str, float]:
-        """计算审计分数"""
-        base_score = 10.0
-        
-        critical_issues = [i for i in audit_results["issues"] if i.get("severity") == "critical"]
-        warning_issues = [i for i in audit_results["issues"] + audit_results["warnings"] 
-                        if i.get("severity") == "warning"]
-        
-        score = base_score
-        score -= len(critical_issues) * 0.5
-        score -= len(warning_issues) * 0.1
-        
-        aigc_report = audit_results.get("aigc_report", {})
-        if aigc_report:
-            summary = aigc_report.get("summary", {})
-            if summary.get("risk_level") == "HIGH":
-                score -= 2.0
-            elif summary.get("risk_level") == "MEDIUM":
-                score -= 1.0
+        if len(issues) > 3:
+            suggestions.append("建议检查人物设定一致性")
         
         return {
-            "overall": max(0, score),
-            "continuity": max(0, score - len([i for i in critical_issues if i["dimension"] == "continuity"]) * 0.3),
-            "voice": max(0, score - len([i for i in critical_issues if i["dimension"] == "voice"]) * 0.3),
-            "aigc_risk": 10 - aigc_report.get("summary", {}).get("critical_issues", 0) if aigc_report else 10
+            "has_issues": len(issues) > 0,
+            "issues": issues,
+            "suggestions": suggestions
         }
     
-    def _generate_recommendations(self, audit_results: Dict[str, Any]) -> List[str]:
-        """生成修订建议"""
-        recommendations = []
+    def audit_world_consistency(
+        self,
+        chapter_content: str,
+        world_settings: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """审计世界观一致性"""
+        issues = []
+        suggestions = []
         
-        for issue in audit_results["issues"]:
-            if issue.get("suggestion"):
-                recommendations.append(f"*{issue['dimension']}*: {issue['suggestion']}")
+        power_levels = world_settings.get("power_levels", [])
+        if power_levels:
+            level_mentioned = self._check_power_level_mentions(chapter_content, power_levels)
+            if level_mentioned:
+                issues.append(f"提到了境界：{level_mentioned}")
         
-        for warning in audit_results["warnings"]:
-            if warning.get("suggestion"):
-                recommendations.append(f"*{warning['dimension']}*: {warning['suggestion']}")
-        
-        if not recommendations:
-            recommendations.append("章节质量良好，建议通过。")
-        
-        return recommendations[:10]
-    
-    def quick_audit(self, draft: str) -> Dict[str, Any]:
-        """
-        快速审计（仅AIGC检测）
-        
-        Args:
-            draft: 章节草稿
-            
-        Returns:
-            简化审计报告
-        """
-        aigc_report = self.anti_slop.full_detect(draft)
-        summary = aigc_report.get("summary", {})
+        regions = world_settings.get("regions", [])
+        if regions:
+            region_mentioned = self._check_region_mentions(chapter_content, regions)
+            if region_mentioned:
+                issues.append(f"提到了地域：{region_mentioned}")
         
         return {
-            "pass": not summary.get("needs_revision", False),
-            "risk_level": summary.get("risk_level", "UNKNOWN"),
-            "critical_issues": summary.get("critical_issues", 0),
-            "warning_issues": summary.get("warning_issues", 0),
-            "aigc_report": aigc_report,
-            "recommendations": self.anti_slop.get_revision_guidance(aigc_report)
+            "has_issues": len(issues) > 0,
+            "issues": issues,
+            "suggestions": suggestions
         }
     
-    def audit_full_novel(
-        self,
-        chapters: Dict[int, str],
-        context: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Any]:
-        """
-        全书审计
+    def audit_ai_tells(self, text: str) -> Dict[str, Any]:
+        """检测AI特征"""
+        ai_tells = {
+            "眼中闪过一丝": 0,
+            "缓缓地": 0,
+            "骤然": 0,
+            "霎时": 0,
+            "心头一紧": 0,
+            "深吸一口气": 0,
+            "嘴角微微上扬": 0,
+            "瞳孔骤缩": 0,
+            "不可置信": 0
+        }
         
-        Args:
-            chapters: 章节字典 {章节号: 内容}
-            context: 上下文
+        found_tells = {}
+        for tell in ai_tells:
+            count = text.count(tell)
+            if count > 0:
+                found_tells[tell] = count
+        
+        severity = "low"
+        if len(found_tells) > 3:
+            severity = "medium"
+        if len(found_tells) > 5:
+            severity = "high"
+        
+        return {
+            "found_tells": found_tells,
+            "severity": severity,
+            "recommendation": "减少套路化表达，用更具体的动作描写替代"
+        }
+    
+    def _fallback_audit(self, content: str, chapter_num: int) -> AuditResult:
+        """备用审计"""
+        word_count = len(content)
+        
+        score = 70.0
+        issues = []
+        suggestions = []
+        
+        if word_count < 1500:
+            score -= 10
+            issues.append("字数偏少，建议2000-3000字")
+        elif word_count > 5000:
+            score -= 5
+            issues.append("字数偏多，建议控制在3000字左右")
+        
+        ai_check = self.audit_ai_tells(content)
+        if ai_check["severity"] == "high":
+            score -= 15
+            issues.append("AI特征明显，需要改写")
+        elif ai_check["severity"] == "medium":
+            score -= 5
+        
+        if score >= 60:
+            passed = True
+        else:
+            passed = False
+            suggestions.append("需要大幅修改")
+        
+        return AuditResult(
+            score=score,
+            issues=issues,
+            suggestions=suggestions,
+            passed=passed
+        )
+    
+    def _parse_audit_response(
+        self,
+        response: str,
+        content: str
+    ) -> AuditResult:
+        """解析审计响应"""
+        try:
+            score = 70.0
+            issues = []
+            suggestions = []
             
-        Returns:
-            全书审计报告
-        """
-        results = {
-            "total_chapters": len(chapters),
-            "chapter_results": {},
-            "cross_chapter_issues": [],
-            "overall_score": 0,
-            "recommendations": []
-        }
-        
-        for ch_num, content in sorted(chapters.items()):
-            results["chapter_results"][ch_num] = self.quick_audit(content)
-        
-        if len(chapters) >= 2:
-            prev_content = ""
-            for ch_num in sorted(chapters.keys()):
-                content = chapters[ch_num]
-                cross_issues = self._check_cross_chapter(prev_content, content, ch_num)
-                if cross_issues:
-                    results["cross_chapter_issues"].extend(cross_issues)
-                prev_content = content
-        
-        total_score = sum(r.get("overall_score", 10) for r in results["chapter_results"].values())
-        results["overall_score"] = total_score / len(chapters) if chapters else 0
-        
-        return results
+            lines = response.split('\n')
+            for line in lines:
+                if '总分' in line or 'score' in line.lower():
+                    try:
+                        score = float(''.join(filter(lambda x: x.isdigit() or x == '.', line)))
+                    except:
+                        pass
+            
+            ai_check = self.audit_ai_tells(content)
+            if ai_check["severity"] == "high":
+                score = min(score, 60)
+                issues.append("AI特征明显")
+            
+            return AuditResult(
+                score=score,
+                issues=issues,
+                suggestions=suggestions,
+                passed=score >= 60
+            )
+        except:
+            return self._fallback_audit(content, 1)
     
-    def _check_cross_chapter(
-        self,
-        prev_content: str,
-        current_content: str,
-        current_chapter: int
-    ) -> List[Dict[str, Any]]:
-        """检查跨章问题"""
+    def _check_basic_continuity(self, current: str, previous: str) -> List[str]:
+        """基本连续性检查"""
         issues = []
         
-        prev_words = set(re.findall(r'[\w]{3,}', prev_content))
-        current_words = set(re.findall(r'[\w]{3,}', current_content))
-        
-        if prev_words and current_words:
-            overlap = len(prev_words & current_words) / len(prev_words)
-            if overlap < 0.05:
-                issues.append({
-                    "chapter": current_chapter,
-                    "type": "low_continuity",
-                    "severity": "warning",
-                    "message": f"与前章词汇重叠率过低 ({overlap:.1%})",
-                    "suggestion": "检查章节过渡是否流畅"
-                })
+        if len(previous) > 100 and len(current) > 100:
+            if "上章" in current or "上一章" in current:
+                if "前文" not in previous:
+                    issues.append("引用前文但描述不一致")
         
         return issues
+    
+    def _check_power_level_mentions(
+        self,
+        text: str,
+        power_levels: List[str]
+    ) -> List[str]:
+        """检查境界提及"""
+        mentioned = []
+        for level in power_levels:
+            if level in text:
+                mentioned.append(level)
+        return mentioned
+    
+    def _check_region_mentions(
+        self,
+        text: str,
+        regions: List[str]
+    ) -> List[str]:
+        """检查地域提及"""
+        mentioned = []
+        for region in regions:
+            if region in text:
+                mentioned.append(region)
+        return mentioned
