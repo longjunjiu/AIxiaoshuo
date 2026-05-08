@@ -35,7 +35,7 @@ class OrchestratorAgent:
         self.craft = CraftRules()
         self.anti_slop = AntiSlopRules()
         
-        self.architect = ArchitectAgent(llm_client, project, self.craft)
+        self.architect = ArchitectAgent(llm_client)
         self.writer = WriterAgent(llm_client, project, self.craft, self.anti_slop)
         self.auditor = AuditorAgent(llm_client, project, self.anti_slop)
         self.reviser = ReviserAgent(llm_client, project, self.anti_slop)
