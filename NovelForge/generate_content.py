@@ -1,416 +1,337 @@
 #!/usr/bin/env python3
 """
-NovelForge 内容生成器 V2.0
-全盘学习十大经典网文：鬼吹灯、盗墓笔记、诛仙、凡人修仙传、斗破苍穹、
-雪中悍刀行、诡秘之主、紫川、全职高手、佣兵天下
+NovelForge 交互式内容生成器
+写作前必须询问操作者确认
 """
 
 import sys
 import json
 from pathlib import Path
+from typing import Optional
 
 sys.path.insert(0, str(Path(__file__).parent))
 sys.path.insert(0, str(Path(__file__).parent / "skills"))
 
-from skills.novel_forge import NovelForge, ForgeConfig
-
-
-# =============================================================================
-# 第一部分：十大经典网文写作指南
-# =============================================================================
-
-CLASSIC_NOVEL_GUIDE = """【十大经典网文全盘学习指南】
-
-=== 《鬼吹灯》盗墓流 ===
-开篇技巧：
-- 直接进入场景，第一人称"我"叙述
-- 从日常切入，引出主线
-- 建立三个主角身份和性格
-
-写作特点：
-- 口语化，有地方特色
-- 悬念迭起，节奏紧凑
-- 探险→发现→危机→化解→收获
-
-核心要素：
-- 禁忌和规矩增加真实感
-- 人物互动幽默
-- 真实感强的细节描写
-
-=== 《盗墓笔记》悬疑探险 ===
-开篇技巧：
-- 用吴邪视角，强烈代入感
-- 开篇就建立悬念炸弹
-- 章节短，节奏快
-
-写作特点：
-- 多视角切换
-- 大量内心独白
-- 网络语言，有梗
-
-核心要素：
-- 永远有更大的谜题
-- 人物身世之谜贯穿始终
-- 发现→推理→新的谜题循环
-
-=== 《诛仙》仙侠经典 ===
-开篇技巧：
-- 从主角童年切入，建立情感
-- 世界观逐步展开
-- "天地不仁，以万物为刍狗"奠定基调
-
-写作特点：
-- 文笔优美，有古风韵味
-- 情感描写细腻
-- 诗词点缀
-
-核心要素：
-- 张小凡三段感情（碧瑶、田不易、田雪琪）
-- 正魔对立
-- 爱恨情仇推动剧情
-
-=== 《凡人修仙传》凡人流 ===
-开篇技巧：
-- 主角出身平凡，资质差
-- 金手指（小绿瓶）出现较晚
-- 困境具体
-
-写作特点：
-- 简洁，不废话
-- 很少内心独白
-- 行动导向
-
-核心要素：
-- 苟道：不浪，算计，隐藏实力
-- 资源积累
-- 稳扎稳打升级
-
-=== 《斗破苍穹》废柴逆袭 ===
-开篇技巧：
-- 退婚流经典开局
-- 三年之约：明确目标
-- 憋屈但有希望
-
-写作特点：
-- 爽文节奏，快
-- 打斗描写精彩
-- 爽点密集
-
-核心要素：
-- 打脸要干脆利落
-- 憋屈要憋到位
-- 升级要有仪式感（天地异象）
-
-=== 《雪中悍刀行》文青武侠 ===
-开篇技巧：
-- 表面纨绔，实则深沉
-- 三年六千里游历建立底色
-- 人物群像
-
-写作特点：
-- 文笔优美，有诗意
-- 对话精彩，有深度
-- 场景有意境
-
-核心要素：
-- 经典台词设计（剑神李淳罡）
-- 江湖与庙堂结合
-- 兄弟情义、家国情怀
-
-=== 《诡秘之主》创新派 ===
-开篇技巧：
-- 穿越到异世界
-- 设定复杂但逐步揭示
-- 悬疑感强烈
-
-写作特点：
-- 翻译腔增加异世界感
-- 心理描写细腻
-- 细节丰富
-
-核心要素：
-- 22条途径、9大序列
-- 扮演法独特
-- 线索公平布置
-
-=== 《紫川》奇幻幽默 ===
-开篇技巧：
-- 轻松幽默基调
-- 年轻人视角
-- 建立主要人物
-
-写作特点：
-- 幽默调侃
-- 人物对话精彩
-- 大场面悲壮
-
-核心要素：
-- 轻松开场→严肃发展
-- 悲剧要有深度
-- 人物性格鲜明
-
-=== 《全职高手》电竞 ===
-开篇技巧：
-- 职业选手被逼退役
-- 进入网游重新开始
-- 目标明确：冠军
-
-写作特点：
-- 游戏术语专业
-- 战斗描写精彩
-- 战术讨论
-
-核心要素：
-- 团队配合，不是单打独斗
-- 每个队员都有特点
-- 专业细节增加真实感
-
-=== 《佣兵天下》西幻 ===
-开篇技巧：
-- 小人物视角
-- 战争背景
-- 佣兵职业设定
-
-写作特点：
-- 西幻风格
-- 战斗场面精彩
-- 对话有特色
-
-核心要素：
-- 战争与策略
-- 团队分工
-- 世界观宏大
-"""
-
-
-# =============================================================================
-# 第二部分：全盘学习综合技巧
-# =============================================================================
-
-COMPREHENSIVE_TECHNIQUES = """【十大经典网文综合写作技巧】
-
-一、开篇炸弹（前300字必须扔出）
-
-《斗破苍穹》式：
-- 被退婚、被嘲讽、被欺负
-- 明确目标（三年之约）
-- 憋屈但有希望
-
-《遮天》式：
-- 九龙拉棺，震撼开局
-- 史诗级意象
-- 悬念贯穿全书
-
-《仙逆》式：
-- 资质审判，困境具体
-- 地狱难度开局
-- "顺为凡，逆则仙"
-
-二、人物塑造公式
-
-主角公式：
-- 出身低但有潜力（凡人流）
-- 明确目标（复仇/升级/保护）
-- 有底线和原则
-- 有成长空间
-
-配角公式：
-- 功能性：帮助主角
-- 性格鲜明
-- 有自己的故事
-
-反派公式：
-- 有自己的逻辑
-- 不是纯粹邪恶
-- 要有实力
-
-三、爽点设计
-
-小爽点（每章）：
-- 打脸、装逼成功
-- 获得小资源
-
-中爽点（每卷）：
-- 升级突破
-- 大胜反派
-
-大爽点（全本）：
-- 复仇成功
-- 登顶巅峰
-
-四、节奏公式
-
-憋屈→爆发→升级→更强的敌人→再爆发
-
-每3-5章必须有爽点
-
-五、语言风格
-
-好的写法：
-- "少爷，你醒了？"清脆的声音。
-- 他攥紧拳头，指节发白。
-- "你这废柴也配？""很快你就知道。"
-
-坏的写法：
-- "眼中闪过一丝坚定"（太套路）
-- "缓缓地"、"骤然"（太书面）
-- 大段环境描写
-"""
-
-
-# =============================================================================
-# 第三部分：各题材专属技巧
-# =============================================================================
-
-GENRE_SPECIFIC_TECHNIQUES = """【各题材专属技巧】
-
-玄幻（《斗破苍穹》《遮天》《完美世界》）
-- 废柴逆袭主线
-- 打怪升级循环
-- 境界突破仪式感
-- 必备：功法、丹药、异火
-
-仙侠（《凡人修仙传》《诛仙》《仙逆》）
-- 修仙问道核心
-- 因果报应
-- 心魔考验
-- 必备：灵气、渡劫、飞升
-
-悬疑探险（《鬼吹灯》《盗墓笔记》）
-- 层层谜题
-- 线索公平
-- 解谜过程
-- 必备：机关、历史、传说
-
-都市职业（《全职高手》）
-- 专业细节
-- 团队配合
-- 成长线
-- 必备：技能、战术、职业
-
-武侠（《雪中悍刀行》）
-- 江湖规矩
-- 人物风骨
-- 经典台词
-- 必备：招式、门派、秘籍
-
-奇幻西幻（《紫川》《佣兵天下》《亵渎》）
-- 势力纷争
-- 战争描写
-- 权力博弈
-- 必备：种族、阵营、战略
-
-"""
-
-
-# =============================================================================
-# 第四部分：完整提示词
-# =============================================================================
-
-def get_novel_writing_prompt() -> str:
-    return f"""
-{CLASSIC_NOVEL_GUIDE}
-{COMPREHENSIVE_TECHNIQUES}
-{GENRE_SPECIFIC_TECHNIQUES}
-
-【写作要求】
-
-1. 开局炸弹：前300字扔出冲突/危机/悬念
-2. 黄金三章：每章必须有冲突、有推进、有期待
-3. 爽点设计：每3-5章必须有爽点
-4. 悬念钩子：章尾留悬念，让读者追更
-5. 人物立体：主角有成长，配角有故事
-6. 语言自然：对话口语化，动作优于心理
-
-请严格按照以上十部经典网文的写作技巧进行创作。
-"""
-
-
-# =============================================================================
-# 第五部分：设定文件生成
-# =============================================================================
-
-def generate_world_settings():
-    return """# 世界观设定
+
+def ask_yes_no(question: str, default: Optional[bool] = None) -> bool:
+    """询问是否确认"""
+    if default is None:
+        choices = "[y/n]"
+    elif default is True:
+        choices = "[Y/n]"
+    else:
+        choices = "[y/N]"
+
+    while True:
+        response = input(f"{question} {choices}: ").strip().lower()
+        if not response and default is not None:
+            return default
+        if response in ("y", "yes"):
+            return True
+        elif response in ("n", "no"):
+            return False
+        print("请输入 y 或 n")
+
+
+def ask_choice(question: str, options: list, default: Optional[int] = None) -> int:
+    """询问选择"""
+    print(f"\n{question}")
+    for i, option in enumerate(options, 1):
+        marker = " ← 默认" if default == i else ""
+        print(f"  {i}. {option}{marker}")
+
+    while True:
+        response = input("请选择 (1-{}): ".format(len(options))).strip()
+        if not response and default is not None:
+            return default
+        try:
+            choice = int(response)
+            if 1 <= choice <= len(options):
+                return choice
+        except ValueError:
+            pass
+        print("请输入有效的选项编号")
+
+
+def ask_input(question: str, default: Optional[str] = None) -> str:
+    """询问输入"""
+    prompt = f"{question}"
+    if default:
+        prompt += f" [{default}]"
+    prompt += ": "
+
+    response = input(prompt).strip()
+    return response if response else (default or "")
+
+
+def ask_multiple(question: str, options: list) -> list:
+    """询问多项选择"""
+    print(f"\n{question}")
+    print("(输入编号，用逗号分隔，如: 1,3,5)")
+    for i, option in enumerate(options, 1):
+        print(f"  {i}. {option}")
+
+    while True:
+        response = input("请选择: ").strip()
+        if not response:
+            return []
+        try:
+            choices = [int(x.strip()) for x in response.split(",")]
+            if all(1 <= c <= len(options) for c in choices):
+                return choices
+        except ValueError:
+            pass
+        print("请输入有效的编号")
+
+
+def interactive_setup():
+    """交互式设置"""
+    print("\n" + "=" * 60)
+    print("NovelForge 交互式内容生成器")
+    print("=" * 60)
+
+    # 1. 询问小说类型
+    print("\n【步骤1/8】选择小说类型")
+    novel_types = [
+        "玄幻（废柴逆袭、打怪升级）",
+        "仙侠（修仙问道、飞升长生）",
+        "都市（扮猪吃虎、打脸爽文）",
+        "修真（凡人流、苟道流）",
+        "武侠（江湖恩怨、侠客义气）",
+        "科幻（星际探索、科技设定）",
+        "悬疑（逻辑推理、层层悬念）",
+        "同人（原著角色互动）"
+    ]
+    type_choice = ask_choice("请选择小说类型:", novel_types, 1)
+    novel_type = ["xuanhuan", "xianxia", "urban", "xiuzhen", "wuxia", "kehuan", "xuanyi", "tongren"][type_choice - 1]
+
+    # 2. 询问书名
+    print("\n【步骤2/8】设置书名")
+    title = ask_input("请输入书名", "星辰剑影")
+
+    # 3. 询问主角
+    print("\n【步骤3/8】设置主角")
+    protagonist_name = ask_input("主角姓名", "陈墨")
+    protagonist_background = ask_input("主角背景（如：废柴少爷/穿越者/遗孤）", "陈家遗孤，被灭门后流落青云宗")
+
+    # 4. 询问金手指
+    print("\n【步骤4/8】设置金手指")
+    golden_finger_options = [
+        "系统（任务奖励、兑换商城）",
+        "老爷爷（神秘传承、辅助指导）",
+        "神器（上古宝物、特殊能力）",
+        "体质（特殊体质、天生强大）",
+        "空间（储物空间、加速修炼）"
+    ]
+    golden_choice = ask_choice("主角金手指类型:", golden_finger_options, 1)
+    golden_finger = ["系统", "老爷爷", "神器", "体质", "空间"][golden_choice - 1]
+
+    # 5. 询问核心冲突
+    print("\n【步骤5/8】设置核心冲突")
+    conflict_options = [
+        "退婚流（被退婚，三年之约）",
+        "灭门流（家族被灭，复仇主线）",
+        "废物流（资质平庸，逆袭崛起）",
+        "穿越流（穿越异世，重新开始）",
+        "争锋流（宗门争斗，天才竞争）"
+    ]
+    conflict_choice = ask_choice("核心冲突类型:", conflict_options, 2)
+    core_conflict = ["退婚流", "灭门流", "废物流", "穿越流", "争锋流"][conflict_choice - 1]
+
+    # 6. 询问写作风格
+    print("\n【步骤6/8】选择参考风格")
+    style_options = [
+        "《斗破苍穹》（爽点密集，打脸干脆）",
+        "《凡人修仙传》（苟道流，低调谨慎）",
+        "《诡秘之主》（悬疑迭起，智斗解谜）",
+        "《雪中悍刀行》（文青融合，人物立体）",
+        "《诛仙》（情感真挚，情节感人）",
+        "《全职高手》（专业细节，团队配合）"
+    ]
+    style_choice = ask_multiple("选择参考风格（可多选）", style_options)
+    if not style_choice:
+        style_choice = [1]
+
+    # 7. 询问每章目标字数
+    print("\n【步骤7/8】设置章节")
+    words_per_chapter = ask_input("每章目标字数", "3000")
+    chapter_count = ask_input("计划章节数", "100")
+
+    # 8. 确认
+    print("\n【步骤8/8】确认设置")
+    print("\n" + "=" * 60)
+    print("📖 小说设定确认")
+    print("=" * 60)
+    print(f"  书名: {title}")
+    print(f"  类型: {novel_types[type_choice-1]}")
+    print(f"  主角: {protagonist_name}")
+    print(f"  背景: {protagonist_background}")
+    print(f"  金手指: {golden_finger}")
+    print(f"  核心冲突: {conflict_options[conflict_choice-1]}")
+    print(f"  参考风格:")
+    for idx in style_choice:
+        print(f"    - {style_options[idx-1]}")
+    print(f"  每章字数: {words_per_chapter}")
+    print(f"  计划章节: {chapter_count}")
+    print("=" * 60)
+
+    if not ask_yes_no("确认以上设置？", True):
+        print("\n已取消，请重新运行")
+        sys.exit(0)
+
+    return {
+        "title": title,
+        "type": novel_type,
+        "protagonist": protagonist_name,
+        "background": protagonist_background,
+        "golden_finger": golden_finger,
+        "conflict": core_conflict,
+        "styles": style_choice,
+        "words_per_chapter": words_per_chapter,
+        "chapter_count": chapter_count
+    }
+
+
+def generate_novel(settings: dict):
+    """根据设置生成小说"""
+    print("\n开始生成小说内容...")
+
+    project_path = Path("novels") / settings["title"]
+    project_path.mkdir(parents=True, exist_ok=True)
+
+    # 生成设定
+    if ask_yes_no("\n是否生成世界观设定？", True):
+        world_settings = generate_world_settings(settings)
+        (project_path / "settings" / "world.md").write_text(world_settings, encoding='utf-8')
+        print(f"✅ 世界观设定已保存")
+
+    # 生成角色
+    if ask_yes_no("\n是否生成角色设定？", True):
+        char_settings = generate_character_settings(settings)
+        (project_path / "settings" / "characters.md").write_text(char_settings, encoding='utf-8')
+        print(f"✅ 角色设定已保存")
+
+    # 生成修炼体系
+    if ask_yes_no("\n是否生成修炼体系？", True):
+        sys_settings = generate_system_settings(settings)
+        (project_path / "settings" / "system.md").write_text(sys_settings, encoding='utf-8')
+        print(f"✅ 修炼体系已保存")
+
+    # 生成章节大纲
+    if ask_yes_no("\n是否生成章节大纲？", True):
+        outline = generate_chapter_outline(settings)
+        (project_path / "volumes" / "volume_1" / "outline.md").write_text(outline, encoding='utf-8')
+        print(f"✅ 章节大纲已保存")
+
+    # 生成第一章
+    if ask_yes_no("\n是否生成第一章内容？", True):
+        print("\n正在生成第一章...")
+        chapter_content = generate_chapter_content(settings)
+        chapters_dir = project_path / "volumes" / "volume_1" / "chapters"
+        chapters_dir.mkdir(parents=True, exist_ok=True)
+        (chapters_dir / "ch_001.md").write_text(chapter_content, encoding='utf-8')
+        print(f"✅ 第一章已保存")
+
+        # 显示生成内容
+        if ask_yes_no("\n是否预览第一章内容？", False):
+            print("\n" + "=" * 60)
+            print(chapter_content)
+            print("=" * 60)
+
+    # 生成后续章节
+    if ask_yes_no("\n是否继续生成后续章节？", False):
+        start_ch = ask_input("从第几章开始？", "2")
+        end_ch = ask_input("到第几章结束？", start_ch)
+        for ch in range(int(start_ch), min(int(end_ch), int(start_ch) + 5) + 1):
+            if ask_yes_no(f"\n是否生成第{ch}章？", True):
+                print(f"\n正在生成第{ch}章...")
+                # 这里调用LLM生成
+                content = f"# 第{ch}章\n\n（待生成）"
+                (project_path / "volumes" / "volume_1" / "chapters" / f"ch_{ch:03d}.md").write_text(content, encoding='utf-8')
+                print(f"✅ 第{ch}章已保存")
+
+    print(f"\n✅ 小说生成完成！")
+    print(f"   项目路径: {project_path}")
+
+
+def generate_world_settings(settings: dict) -> str:
+    """生成世界观"""
+    type_map = {
+        "xuanhuan": "玄幻",
+        "xianxia": "仙侠",
+        "urban": "都市",
+        "xiuzhen": "修真",
+        "wuxia": "武侠",
+        "kehuan": "科幻"
+    }
+    genre = type_map.get(settings["type"], "玄幻")
+
+    return f"""# 世界观设定
 
 ## 世界概述
 
-【玄元大陆】修仙为尊，弱者如蝼蚁，强者为所欲为。
+【{genre}世界】弱者如蝼蚁，强者为所欲为。
 
 ## 地域划分
 
 - 中州：修仙圣地，宗门林立
-- 东荒：妖兽横行，危险与机遇并存
-- 南疆：瘴气弥漫，毒虫肆虐
-- 西漠：沙海茫茫，古城遗迹
-- 北冰：冰封万里，苦寒之地
+- 东荒：妖兽横行
+- 南疆：瘴气弥漫
+- 西漠：古城遗迹
+- 北冰：苦寒之地
 
 ## 势力分布
 
-1. 青云宗 - 正道领袖，剑修圣地
-2. 万魔窟 - 魔道根源
-3. 天机阁 - 情报世家
-4. 丹鼎门 - 炼丹宗师
+1. 正道宗门 - 修仙圣地
+2. 魔道势力 - 诡秘莫测
+3. 世俗王朝 - 王权至上
+4. 散修联盟 - 草根势力
 
-## 经典设定参考（《凡人修仙传》《仙逆》）
+## 修炼体系
 
-【资源体系】
-- 灵石：通用货币
-- 丹药：辅助修炼
-- 法器：战斗装备
-- 功法：核心传承
-
-【修炼境界】
 炼气 → 筑基 → 金丹 → 元婴 → 化神 → 炼虚 → 合道 → 大乘 → 渡劫
 """
 
 
-def generate_character_settings():
-    return """# 角色设定
+def generate_character_settings(settings: dict) -> str:
+    """生成角色设定"""
+    return f"""# 角色设定
 
-## 主角：陈墨
+## 主角
 
-【参考《仙逆》王林】
-- 出身平凡，资质平庸
-- 有明确目标：查明灭门真相
-- 隐忍但有底线
-- 金手指：体内封印上古剑灵
+### {settings["protagonist"]}
 
-【参考《凡人修仙传》韩立】
-- 低调谨慎，不浪
-- 算计每一步
-- 资源积累型
+- **身份**: {settings["background"]}
+- **性格**: 沉默寡言，心思细腻
+- **目标**: 查明真相，逆袭崛起
+- **金手指**: {settings["golden_finger"]}
 
-## 配角设计
+## 配角
 
-【参考《鬼吹灯》铁三角】
-三人组性格互补：
-- 主角：冷静、有谋略
-- 副手：义气、冲动
-- 智囊：专业、知识渊博
+### 苏晴雪
+- 身份：宗门千金
+- 性格：天真善良
+- 作用：情感线
 
-【参考《雪中悍刀行》】
-每个配角都有故事：
-- 前因后果
-- 性格成因
-- 与主角的羁绊
+### 周长老
+- 身份：宗门长老
+- 性格：刚正不阿
+- 作用：伯乐
 
-## 反派设计
-
-【参考《斗破苍穹》】
-- 有自己的逻辑
-- 不是纯粹邪恶
-- 要有实力
-- 与主角有利益冲突
+### 反派
+- 身份：待定
+- 性格：嚣张跋扈
+- 作用：被打脸
 """
 
 
-def generate_system_settings():
+def generate_system_settings(settings: dict) -> str:
+    """生成修炼体系"""
     return """# 修炼体系
 
 ## 修为境界
 
-1. 炼气期（九层）- 感应灵气，打通经脉
+1. 炼气期（九层）- 感应灵气
 2. 筑基期（初/中/后期）- 凝聚丹田
 3. 金丹期 - 丹成无悔
 4. 元婴期 - 神魂出窍
@@ -418,124 +339,76 @@ def generate_system_settings():
 6. 炼虚期 - 宗门底蕴
 7. 合道期 - 传说境界
 8. 大乘期 - 半步飞升
-9. 渡劫期 - 渡天劫，成仙
+9. 渡劫期 - 渡天劫
 
-## 参考《凡人修仙传》资源体系
+## 功法等级
 
-- 灵石：下品、中品、上品、极品
-- 丹药：丹药品级对应境界
-- 法器：法器等级
-- 功法：黄阶、玄阶、地阶、天阶、仙阶
-
-## 参考《诡秘之主》序列体系
-
-【可借鉴的设计】
-- 每境界有独特能力
-- 能力有代价
-- 有克制关系
+黄阶 < 玄阶 < 地阶 < 天阶 < 仙阶
 """
 
 
-def generate_magic_settings():
-    return """# 特殊设定
+def generate_chapter_outline(settings: dict) -> str:
+    """生成章节大纲"""
+    conflict_map = {
+        "退婚流": "被未婚妻退婚，立下三年之约",
+        "灭门流": "家族被灭，发誓查明真相复仇",
+        "废物流": "资质平庸，被人嘲笑，逆袭崛起",
+        "穿越流": "穿越到异世界，重新开始人生",
+        "争锋流": "宗门大比，争夺资源"
+    }
+    conflict = conflict_map.get(settings["conflict"], "废物流")
 
-## 剑灵碎片
-
-【参考《仙逆》天逆珠】
-- 沉睡万年
-- 择主（不选平庸者）
-- 弥补资质差距
-
-### 能力
-- 吸收剑意
-- 残剑记忆
-- 传承剑法
-
-### 限制
-- 需要血祭
-- 消耗精血
-- 过度反噬
-
-## 经典金手指参考
-
-【《凡人修仙传》小绿瓶】
-- 催熟灵药
-- 加速修炼
-- 隐秘性
-
-【《斗破苍穹》异火】
-- 战斗加成
-- 炼药能力
-- 成长性
-
-【《仙逆》天逆珠】
-- 弥补资质
-- 加速修炼
-- 神秘来历
-"""
-
-
-def generate_chapter_outline():
-    return """# 第一卷 青云宗
+    return f"""# 第一卷 大纲
 
 ## 第一章 落魄少年
 
-【参考《仙逆》开局】
-- 主角困境具体（资质平庸）
-- 开局扔炸弹（被欺负）
-- 金手指出现（剑灵传承）
-- 悬念钩子（身世之谜）
+**核心冲突**: {conflict}
+**情节**: 主角出场，展示困境
+**爽点**: 金手指出现
 
 ## 第二章 拜师
 
-【参考《斗破苍穹》三年之约】
-- 周长老收徒，震惊众人
-- 打脸铺垫（赵无极嫉妒）
-- 情感线初现（苏晴雪出场）
-- 新目标确立
+**核心冲突**: 拜入门下
+**情节**: 被高人看中，收为徒弟
+**爽点**: 打脸看不起自己的人
 
 ## 第三章 宗门大比
 
-【参考《斗破苍穹》打脸爽点】
-- 被迫参赛
-- 众人嘲笑
-- 主角连胜
-- 赵无极被打脸
+**核心冲突**: 实力展示
+**情节**: 大比开始，主角展现实力
+**爽点**: 越级挑战，打脸成功
 
 ## 第四章 暗流涌动
 
-【参考《凡人修仙传》资源争夺】
-- 赵无极请家族出手
-- 魔道出现
-- 危机降临
-- 悬念（神秘人是谁？）
+**核心冲突**: 危机降临
+**情节**: 反派报复，危机出现
+**悬念**: 主角如何应对？
 
 ## 第五章 传承
 
-【参考《仙逆》揭示真相】
-- 老道士揭示身份
-- 透露灭门真相
-- 传授功法
-- 新目标（复仇）
+**核心冲突**: 真相揭示
+**情节**: 获得传承，了解身世
+**高潮**: 知道仇人是谁
 """
 
 
-def generate_chapter_content():
-    return """# 第一章 落魄少年
+def generate_chapter_content(settings: dict) -> str:
+    """生成章节内容"""
+    return f"""# 第一章 落魄少年
 
-天还没亮，陈墨就醒了。
+天还没亮，{settings["protagonist"]}就醒了。
 
 不是被什么吵醒的，是习惯。
 
 在这个地方，睡过头是要挨骂的。
 
-他穿好那身洗得发白的灰布衫，摸黑走出杂役房。清晨的山风带着凉意，吹得他打了个哆嗦。
-
 ---
+
+他穿好那身洗得发白的灰布衫，摸黑走出杂役房。清晨的山风带着凉意，吹得他打了个哆嗦。
 
 青云宗后山，竹林。
 
-陈墨熟练地挥起柴刀。
+{settings["protagonist"]}熟练地挥起柴刀。
 
 "咔嚓"、"咔嚓"、"咔嚓"……
 
@@ -547,27 +420,27 @@ def generate_chapter_content():
 
 ---
 
-"哟，陈墨，又这么早？"
+"哟，{{{{settings['protagonist']}}}}，又这么早？"
 
 一个吊儿郎当的声音从身后传来。
 
-陈墨没回头。他知道是谁——赵元，外门弟子，专门负责"监管"他们这些杂役。说白了，就是有事儿没事儿来找找茬。
+{{{{settings['protagonist']}}}}没回头。他知道是谁——赵元，外门弟子，专门负责"监管"他们这些杂役。
 
 "问你话呢，聋了？"赵元一脚踹过来。
 
-陈墨侧身避开，柴刀顺势一收，转过身。
+{{{{settings['protagonist']}}}}侧身避开，站起身。
 
 "元哥早。"
 
-他的声音很平静，甚至有点木讷。
+他的声音很平静。
 
-赵元皱了皱眉。本来想找点乐子，但这小子跟个木头似的，怎么欺负都没反应，没劲。
+赵元皱了皱眉。这小子跟个木头似的，怎么欺负都没反应，没劲。
 
-"行了，砍你的柴去。今天多砍二十根，少一根别想吃饭。"
+"行了，今天多砍十把，少一把别想吃饭。"
 
 说完，赵元晃晃悠悠走了。
 
-陈墨看着他的背影，眼底深处闪过一丝冷意。
+{{{{settings['protagonist']}}}}看着他的背影，眼底深处闪过一丝冷意。
 
 不是怕。
 
@@ -575,33 +448,15 @@ def generate_chapter_content():
 
 ---
 
-砍完柴，陈墨挑着担子往回走。
+{settings['background']}。
 
-路过一处山坡时，他停下脚步，望向远处的宗门主峰。
-
-云雾缭绕，殿宇重重，隐约能看见弟子们御剑飞行的身影。
-
-那里是他永远也进不去的世界。
-
-"天生剑骨缺失，这辈子注定是个废人。"
-
-三年前，那个老道士的话还在耳边回响。
-
-陈墨握紧拳头。
-
-他叫陈墨，出身江南陈家。十年前的那个雪夜，一切都变了。
+十年前的那个雪夜，一切都变了。
 
 火光冲天，惨叫四起。
 
-他亲眼看着他爹被人一剑穿心，亲眼看着他娘跳井自尽。偌大的陈府，一夜之间化为焦土。
+他亲眼看着……
 
-要不是老管家陈福拼死相护，他早就死了。
-
-"少爷……跑……往南边跑……青云宗……"
-
-这是老管家最后的话。
-
-陈墨跑了。一路乞讨，一路躲避追杀。三年流浪，两年苟活。直到有一天，他倒在青云宗山门外，被杂役堂的刘老伯捡了回去。
+（此处需要根据设定详细展开）
 
 ---
 
@@ -611,13 +466,11 @@ def generate_chapter_content():
 
 "谢谢刘爷爷。"
 
-陈墨接过碗，几口喝完。
-
 三年来，刘老伯对他很好。在这个冰冷的宗门里，老人是为数不多让他感到温暖的人。
 
 ---
 
-吃完饭，陈墨去后山挑水。
+吃完饭，{settings['protagonist']}去后山挑水。
 
 路过一片偏僻的竹林时，他突然停下脚步。
 
@@ -627,7 +480,7 @@ def generate_chapter_content():
 
 但今天，这股痛楚格外强烈。
 
-陈墨四下张望，顺着那股莫名的感应走了过去。
+{settings['protagonist']}四下张望，顺着那股莫名的感应走了过去。
 
 穿过荆棘丛，绕过巨石。
 
@@ -639,7 +492,7 @@ def generate_chapter_content():
 
 一柄漆黑的、断成两截的古剑。
 
-陈墨的心脏猛地跳了一下。
+{settings['protagonist']}的心脏猛地跳了一下。
 
 "咚！"
 
@@ -665,19 +518,11 @@ def generate_chapter_content():
 
 *"过来……"*
 
-*"我等你……"*
-
-陈墨下意识伸出手，指尖触碰到冰冷的剑身。
+{settings['protagonist']}下意识伸出手，指尖触碰到冰冷的剑身。
 
 "轰！"
 
 白光炸开！
-
-他感觉胸口像是被撕开，一股狂暴的力量冲入体内。
-
-痛！
-
-比任何一次都要痛！
 
 然后，他昏了过去。
 
@@ -685,7 +530,7 @@ def generate_chapter_content():
 
 不知过了多久。
 
-陈墨悠悠转醒。
+{settings['protagonist']}悠悠转醒。
 
 他发现自己躺在地上，那柄古剑已经黯淡无光。
 
@@ -693,25 +538,13 @@ def generate_chapter_content():
 
 他挣扎着想坐起来，却发现脑子里多了很多东西。
 
-一套剑法！青云十三式——攻守兼备，变化莫测。
+一套剑法！{{{{settings.get('golden_finger', '神秘')}}}}传承——
 
-一套心法！剑元诀——以意驭剑，以气催剑。
-
-"我……我得到了什么？"
-
-陈墨瞪大眼睛，不敢相信。
-
-但胸口传来的灼热感告诉他，这是真的。
-
-胸口那块地方，出现了一个淡淡的剑形印记。
-
-*"小子，你我有缘。这剑灵传承，便赠予你了。"*
-
-*"去吧……"*
+"{{{{settings['protagonist']}}}}，你我有缘。这传承，便赠予你了。"
 
 声音消散。
 
-陈墨跪在原地，久久不语。
+{settings['protagonist']}跪在原地，久久不语。
 
 他的命运，从这一刻开始，彻底不同了。
 
@@ -721,31 +554,19 @@ def generate_chapter_content():
 
 一声轻响打破了寂静。
 
-陈墨猛然回头。
-
-只见不远处的灌木丛后，一个白发苍苍的老者正缓缓走出。
+{settings['protagonist']}猛然回头。
 
 周长老！
 
 青云宗外门三大长老之一！
 
-"周……周长老！"
-
-陈墨慌忙行礼。
-
-周长老盯着他看了很久。
-
-良久，老者开口了：
-
 "你叫什么名字？"
 
-"陈……陈墨。"
+"{{{{settings['protagonist']}}}}。"
 
 "你可愿随我修炼？"
 
-陈墨愣住了。
-
-周长老要收他为徒？
+{{{{settings['protagonist']}}}}愣住了。
 
 "我……我愿意！"
 
@@ -753,132 +574,15 @@ def generate_chapter_content():
 
 "明日卯时，来剑阁找我。"
 
-陈墨站在原地，心跳如雷。
+{settings['protagonist']}站在原地，心跳如雷。
 
 "爹，娘……孩儿的命运，终于要改变了。"
 """
 
 
-# =============================================================================
-# 第六部分：主函数
-# =============================================================================
-
 def main():
-    project_path = Path("novels/星辰剑影")
-
-    if not project_path.exists():
-        print("项目不存在，请先运行 main.py create 命令")
-        return
-
-    print("=" * 60)
-    print("NovelForge 内容生成器 V2.0")
-    print("全盘学习十大经典网文")
-    print("=" * 60)
-
-    print("\n学习指南：")
-    print("- 《鬼吹灯》盗墓流")
-    print("- 《盗墓笔记》悬疑探险")
-    print("- 《诛仙》仙侠经典")
-    print("- 《凡人修仙传》凡人流")
-    print("- 《斗破苍穹》废柴逆袭")
-    print("- 《雪中悍刀行》文青武侠")
-    print("- 《诡秘之主》创新派")
-    print("- 《紫川》奇幻幽默")
-    print("- 《全职高手》电竞")
-    print("- 《佣兵天下》西幻")
-    print("- 《仙逆》执念流")
-    print("- 《遮天》史诗开局")
-    print("- 《亵渎》黑暗流")
-    print("")
-
-    # 1. 生成世界观设定
-    print("正在生成世界观设定...")
-    (project_path / "settings" / "world.md").write_text(generate_world_settings(), encoding='utf-8')
-    print("✅ 世界观设定已保存")
-
-    # 2. 生成角色设定
-    print("正在生成角色设定...")
-    (project_path / "settings" / "characters.md").write_text(generate_character_settings(), encoding='utf-8')
-    print("✅ 角色设定已保存")
-
-    # 3. 生成修炼体系
-    print("正在生成修炼体系...")
-    (project_path / "settings" / "system.md").write_text(generate_system_settings(), encoding='utf-8')
-    print("✅ 修炼体系已保存")
-
-    # 4. 生成特殊设定
-    print("正在生成特殊设定...")
-    (project_path / "settings" / "magic.md").write_text(generate_magic_settings(), encoding='utf-8')
-    print("✅ 特殊设定已保存")
-
-    # 5. 生成章节大纲
-    print("正在生成章节大纲...")
-    (project_path / "volumes" / "volume_1" / "outline.md").write_text(generate_chapter_outline(), encoding='utf-8')
-    print("✅ 章节大纲已保存")
-
-    # 6. 生成第一章
-    print("正在生成第一章内容...")
-    chapter_content = generate_chapter_content()
-    chapters_dir = project_path / "volumes" / "volume_1" / "chapters"
-    chapters_dir.mkdir(parents=True, exist_ok=True)
-    (chapters_dir / "ch_001.md").write_text(chapter_content, encoding='utf-8')
-    print("✅ 第一章内容已保存")
-
-    # 7. 更新记忆文件
-    print("正在更新记忆文件...")
-    memory_dir = project_path / "memory"
-    memory_dir.mkdir(parents=True, exist_ok=True)
-
-    hook_network = """# 伏笔网络
-
-## 待回收伏笔
-
-| 伏笔ID | 内容 | 植入章节 | 状态 |
-|--------|------|----------|------|
-| hook_0001 | 陈家灭门另有隐情 | 第1章 | 待回收 |
-| hook_0002 | 周长老认识陈墨父亲 | 第1章 | 待回收 |
-| hook_0003 | 刘老伯知道陈墨身世 | 第1章 | 待回收 |
-| hook_0004 | 赵无极的背景 | 第1章 | 待回收 |
-| hook_0005 | 苏晴雪认得陈墨 | 第2章 | 待回收 |
-| hook_0006 | 胸口剑形印记来历 | 第1章 | 待回收 |
-
-## 已回收伏笔
-
-无
-"""
-    (memory_dir / "hook_network.md").write_text(hook_network, encoding='utf-8')
-
-    canon = """# 真相文件
-
-- 陈墨出身江南陈家，十年前家族被灭 - 第1章
-- 陈墨被老管家拼死救出 - 第1章
-- 陈墨三年前被青云宗收留 - 第1章
-- 陈墨天生"剑骨缺失"（假象） - 第1章
-- 陈墨获得剑灵传承 - 第1章
-- 陈墨胸口有剑形印记 - 第1章
-- 周长老收陈墨为徒 - 第1章
-"""
-    (memory_dir / "canon.md").write_text(canon, encoding='utf-8')
-
-    resource_ledger = """# 资源账本
-
-## 主角资源
-
-| 资源名 | 数量 | 变动记录 | 最后更新 |
-|--------|------|----------|----------|
-| 修为 | 凡人 | 初始 | 第1章 |
-| 剑法 | 青云十三式（未修炼） | 剑灵传承 | 第1章 |
-| 心法 | 剑元诀（未修炼） | 剑灵传承 | 第1章 |
-| 剑意 | 0 | - | 第1章 |
-"""
-    (memory_dir / "resource_ledger.md").write_text(resource_ledger, encoding='utf-8')
-
-    print("✅ 记忆文件已更新")
-
-    print("\n" + "=" * 60)
-    print("生成完成！")
-    print("=" * 60)
-    print(f"项目位置：novels/星辰剑影")
+    settings = interactive_setup()
+    generate_novel(settings)
 
 
 if __name__ == "__main__":
