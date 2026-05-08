@@ -314,7 +314,7 @@ class NovelForge:
             "total_chapters": self.project.total_chapters,
             "written_chapters": len(self.project.chapters),
             "current_volume": self.project.current_volume,
-            "word_count": sum(ch.word_count for ch in self.project.chapters.values()),
+            "word_count": sum(ch.get("word_count", 0) for ch in self.project.chapters.values()),
             "pending_hooks": self.track_hooks().get("pending_count", 0),
             "project_path": str(self.project_path)
         }
