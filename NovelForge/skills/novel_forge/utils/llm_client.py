@@ -23,7 +23,7 @@ class LLMClient:
     SUPPORTED_PROVIDERS = [
         "openai", "anthropic", "custom", 
         "huggingface", "ollama", "api2d",
-        "deepseek", "qwen", "zhipu"
+        "deepseek", "qwen", "zhipu", "nvidia"
     ]
     
     def __init__(
@@ -59,7 +59,8 @@ class LLMClient:
             "api2d": "https://api2d.com/v1",
             "deepseek": "https://api.deepseek.com/v1",
             "qwen": "https://api.qwenlm.com/v1",
-            "zhipu": "https://open.bigmodel.cn/api/paas/v4"
+            "zhipu": "https://open.bigmodel.cn/api/paas/v4",
+            "nvidia": "https://integrate.api.nvidia.com/v1"
         }
         return defaults.get(self.provider, "https://api.openai.com/v1")
     
@@ -74,7 +75,8 @@ class LLMClient:
             "api2d": "gpt-4",
             "deepseek": "deepseek-chat",
             "qwen": "qwen-plus",
-            "zhipu": "glm-4"
+            "zhipu": "glm-4",
+            "nvidia": "meta/llama-3.1-70b-instruct"
         }
         return defaults.get(self.provider, "gpt-4")
     

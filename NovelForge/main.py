@@ -409,7 +409,7 @@ def main():
     
     parser.add_argument("--provider", "-P", choices=[
         "openai", "anthropic", "custom", "huggingface", "ollama", 
-        "api2d", "deepseek", "qwen", "zhipu"
+        "api2d", "deepseek", "qwen", "zhipu", "nvidia"
     ], help="LLM提供商")
     parser.add_argument("--api-key", "-K", help="API密钥")
     parser.add_argument("--base-url", "-U", help="API基础URL")
