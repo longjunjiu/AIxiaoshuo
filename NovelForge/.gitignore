@@ -1,10 +1,33 @@
+# Python
 __pycache__/
 *.pyc
 *.pyo
 *.egg-info/
 dist/
 build/
+
+# Virtual environment
 .venv/
 venv/
 env/
+
+# Logs
 *.log
+
+# API keys and config
+.env
+*.env
+api_keys.py
+
+# Generated content
+novels/*/volumes/*/chapters/
+novels/*/memory/
+novels/*/settings/
+!novels/星辰剑影_正文/
+
+# Test files
+novels/*_test/
+
+# OS
+.DS_Store
+Thumbs.db

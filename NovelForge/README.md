@@ -1,77 +1,56 @@
-# AIxiaoshuo - AI小说辅助创作系统
+# NovelForge - AI小说创作核心模块
 
-## 项目简介
+本目录包含AIxiaoshuo项目的核心代码实现。
 
-**AIxiaoshuo** 是一个专为辅助创作百万字级别长篇网络小说而设计的AI技能系统。支持多Agent协作、多模型调用、交互式创作，专为网文作家打造。
+## 📁 目录结构
 
-## 核心功能
+```
+NovelForge/
+├── skills/novel_forge/     # 核心技能模块
+│   ├── agents/             # 多Agent系统
+│   │   ├── architect.py    # 建筑师Agent
+│   │   ├── writer.py       # 写手Agent
+│   │   ├── auditor.py      # 审计Agent
+│   │   ├── reviser.py      # 修订Agent
+│   │   ├── panel.py        # 评审团Agent
+│   │   └── orchestrator.py # 编排器
+│   ├── memory/             # 三层记忆系统
+│   │   ├── short_term.py   # 短期记忆
+│   │   ├── mid_term.py     # 中期记忆
+│   │   └── long_term.py    # 长期记忆
+│   ├── rules/              # 创作规则
+│   │   ├── classic_novels.py # 经典网文学习
+│   │   ├── anti_slop.py    # 去AI味规则
+│   │   ├── craft.py        # 写作技巧
+│   │   └── genre_rules.py  # 题材规则
+│   ├── utils/              # 工具函数
+│   │   ├── llm_client.py   # LLM客户端
+│   │   └── file_ops.py     # 文件操作
+│   ├── novel_manager.py    # 小说管理器
+│   └── config.json         # 配置文件
+├── novels/                 # 生成的小说目录
+├── generate_content.py     # 交互式生成器
+├── gen_batch.py            # 批量生成脚本
+├── gen_chapter.py          # 单章生成脚本
+├── main.py                 # 主入口
+├── USER_GUIDE.md           # 用户指南
+├── SPEC.md                 # 技术规格
+└── .gitignore              # Git忽略配置
+```
 
-### 🤖 多Agent协作系统
-- **建筑师Agent**：规划章节结构、埋设伏笔
-- **写手Agent**：生成高质量正文内容
-- **审计Agent**：26维度质量检查
-- **修订Agent**：优化文风、去AI味
-- **评审团Agent**：多视角评审把关
-
-### 📚 三层记忆系统
-- **短期记忆**：当前章节上下文
-- **中期记忆**：当前卷剧情连贯
-- **长期记忆**：全书设定统一
-
-### 🎯 90个情节方案库
-6种冲突类型 × 5个章节阶段 × 3个情节方案：
-- 退婚流、灭门流、废物流、穿越流、争锋流、逆袭流
-
-### 🔧 多模型支持
-| 提供商 | 说明 |
-|--------|------|
-| NVIDIA NIM | 免费Llama-3.1-70B |
-| OpenAI | GPT-4/3.5 |
-| Anthropic | Claude-3 |
-| DeepSeek | 国产高性能 |
-| Ollama | 本地模型 |
-| 自定义API | 灵活扩展 |
-
-### 📖 十大经典网文学习
-内置经典网文写作指南，参考《斗破苍穹》《凡人修仙传》等作品风格。
-
-## 快速开始
+## 🚀 快速开始
 
 ```bash
-# 进入项目目录
-cd NovelForge
-
 # 安装依赖
 pip install pyyaml requests
 
-# 使用NVIDIA免费API生成小说
+# 使用NVIDIA免费API
 export NVIDIA_API_KEY="your-key"
 python gen_batch.py
 ```
 
-## 项目结构
+## 📖 更多信息
 
-```
-NovelForge/
-├── skills/novel_forge/    # 核心技能
-│   ├── agents/           # 多Agent系统
-│   ├── memory/           # 三层记忆
-│   ├── rules/            # 创作规则
-│   └── utils/            # 工具函数
-├── novels/               # 生成的小说
-│   └── 星辰剑影_正文/    # 测试作品
-├── generate_content.py   # 交互式生成器
-├── gen_batch.py          # 批量生成脚本
-└── main.py               # 主入口
-```
-
-## 适用场景
-
-- ✅ 百万字长篇网络小说
-- ✅ 多卷系列作品
-- ✅ 玄幻/仙侠/都市多题材
-- ✅ 批量章节生成
-
-## 许可证
-
-MIT License
+- 项目主页：[https://github.com/longjunjiu/AIxiaoshuo](https://github.com/longjunjiu/AIxiaoshuo)
+- 用户指南：[USER_GUIDE.md](USER_GUIDE.md)
+- 技术规格：[SPEC.md](SPEC.md)
