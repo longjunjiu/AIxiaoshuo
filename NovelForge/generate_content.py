@@ -1313,7 +1313,7 @@ class NovelForgeInteractive:
 
 一套心法！
 
-"{{{{{ protagonist}}}}，你我有缘。这传承，便赠予你了。"
+"剑灵说道：'{ protagonist}，你我有缘。这传承，便赠予你了。"
 
 声音消散。
 
