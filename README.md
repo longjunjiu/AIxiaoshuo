@@ -75,7 +75,7 @@ AIxiaoshuo/
 │   ├── gen_batch.py         # 批量生成脚本
 │   ├── gen_chapter.py       # 单章生成脚本
 │   └── main.py              # 主入口
-├── taigu_shenwang.epub      # 参考小说示例
+├── LICENSE                  # 许可证文件
 └── README.md                # 项目简介
 ```
 
