@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-使用NVIDIA API生成小说正文
+使用NVIDIA API调用MiniMax模型生成小说正文
 """
 
 import os
@@ -20,43 +20,34 @@ if not NVIDIA_API_KEY:
 
 os.environ["NVIDIA_API_KEY"] = NVIDIA_API_KEY
 
-from skills.novel_forge import NovelForge, ForgeConfig
-from skills.novel_forge.agents.orchestrator import OrchestratorAgent
+from skills.novel_forge.utils.llm_client import LLMClient
+from dataclasses import dataclass
+
+@dataclass
+class ForgeConfig:
+    llm_provider: str = "nvidia"
+    api_key: str = ""
+    base_url: str = "https://integrate.api.nvidia.com/v1"
+    model: str = "meta/llama-3.1-70b-instruct"
+    temperature: float = 0.7
+    max_tokens: int = 4096
 
 def main():
     print("=" * 70)
-    print("  NovelForge × NVIDIA NIM 小说正文生成")
+    print("  NovelForge × NVIDIA × MiniMax-2.7 小说正文生成")
     print("=" * 70)
 
-    config = ForgeConfig(
-        llm_provider="nvidia",
-        api_key=NVIDIA_API_KEY,
-        base_url="https://integrate.api.nvidia.com/v1",
-        model="meta/llama-3.1-70b-instruct",
-        temperature=0.7,
-        max_tokens=2048
-    )
-
-    forge = NovelForge(config)
+    config = ForgeConfig()
 
     project_path = Path("novels/星辰剑影_正文")
     project_path.mkdir(parents=True, exist_ok=True)
 
-    project = forge.create_project(
-        title="星辰剑影",
-        genre="玄幻",
-        synopsis="陈墨，陈家遗孤，三年前家族被灭门，意外获得星辰剑典传承，誓要复仇",
-        target_chapters=100,
-        target_words_per_chapter=3000,
-        output_dir="novels"
-    )
-
-    print(f"\n📚 项目: {project.title}")
+    print(f"\n📚 项目: 星辰剑影")
     print(f"   模型: {config.model}")
     print(f"   路径: {project_path}")
 
     print("\n" + "=" * 70)
-    print("  测试生成第一章")
+    print("  生成第一章")
     print("=" * 70)
 
     system_prompt = """你是一个专业的网络小说作家，擅长创作玄幻修仙类小说。
@@ -87,13 +78,12 @@ def main():
 
 请直接输出正文，不需要章节标题。"""
 
-    print("\n正在调用NVIDIA API生成正文...")
+    print("\n正在调用NVIDIA API (MiniMax-2.7) 生成正文...")
     print("-" * 50)
 
     start_time = time.time()
 
     try:
-        from skills.novel_forge.utils.llm_client import LLMClient
         llm = LLMClient(config)
 
         messages = [
@@ -104,7 +94,7 @@ def main():
             messages=messages,
             system=system_prompt,
             temperature=0.8,
-            max_tokens=2048
+            max_tokens=4096
         )
 
         elapsed = time.time() - start_time
@@ -115,9 +105,10 @@ def main():
         print(f"   字符数: {len(content)}")
 
         print("\n" + "=" * 70)
-        print("  生成内容预览（前500字）")
+        print("  生成内容预览")
         print("=" * 70)
-        print(content[:500])
+        preview = content[:800] if len(content) > 800 else content
+        print(preview)
         print("\n...")
 
         ch_path = project_path / "volumes/volume_1/chapters"
