@@ -7,27 +7,8 @@ from typing import Dict, Any, List, Optional
 from dataclasses import dataclass
 
 
-@dataclass
-class OutlineContext:
-    """大纲规划上下文"""
-    novel_title: str
-    genre: str
-    tone: str
-    target_word_count: int
-    chapter_count: int
-
-
 class ArchitectAgent:
-    """
-    建筑师机器人
-    
-    参考十大经典网文结构设计：
-    - 《斗破苍穹》- 废柴逆袭，三年之约
-    - 《凡人修仙传》- 凡人流，稳扎稳打
-    - 《诡秘之主》- 层层悬念，智斗解谜
-    - 《雪中悍刀行》- 人物群像，江湖情义
-    - 《诛仙》- 情感主线，三角恋
-    """
+    """建筑师机器人"""
     
     def __init__(self, llm_client=None):
         self.llm = llm_client
@@ -41,7 +22,6 @@ class ArchitectAgent:
 - 开局：废柴被退婚，三年之约立下
 - 发展：升级打怪，获得异火
 - 高潮：三年期满，约战成功
-- 结局：成为斗帝，击败魂族
 - 核心节奏：憋屈→爆发→升级→更强的敌人→再爆发
 
 《凡人修仙传》结构：
@@ -55,18 +35,6 @@ class ArchitectAgent:
 - 发展：升级序列，解谜历史
 - 高潮：对抗邪神，拯救世界
 - 核心节奏：解谜→升级→新的谜团→更大的谜团
-
-《雪中悍刀行》结构：
-- 开局：北凉世子纨绔，父死母亡
-- 发展：江湖游历，结交豪杰
-- 高潮：凉莽大战，为国捐躯
-- 核心节奏：个人成长→家国情怀→悲剧英雄
-
-《诛仙》结构：
-- 开局：张小凡入门青云
-- 发展：三段感情，正魔之争
-- 高潮：碧瑶挡剑，陆雪琪表白
-- 核心节奏：修仙+爱情，虐心虐身
 
 【网文结构公式】
 
@@ -95,231 +63,166 @@ class ArchitectAgent:
 4. 悬念/伏笔
 5. 爽点设计
 
-【卷结构】
-
-每卷结构：
-- 开局（1-2章）：建立新环境/新危机
-- 发展（3-N-2章）：层层递进
-- 高潮（N-1章）：大冲突爆发
-- 结尾（N章）：悬念收尾，新伏笔
-
 请严格按照以上结构设计原则进行大纲规划。"""
     
-    def design_novel_structure(
+    def plan_chapter(
         self,
-        context: OutlineContext
-    ) -> Dict[str, Any]:
-        """设计小说整体结构"""
+        chapter_num: int,
+        volume_num: int,
+        guidance: str = "",
+        context: Dict = None
+    ) -> 'ChapterOutlineResult':
+        """规划单章大纲"""
         if not self.llm:
-            return self._fallback_structure(context)
+            return self._fallback_plan(chapter_num, volume_num)
         
-        prompt = f"""请为小说《{context.novel_title}》设计整体结构：
+        context_info = ""
+        if context:
+            long_term = context.get('long_term', {})
+            mid_term = context.get('mid_term', {})
+            pending_hooks = context.get('pending_hooks', [])
+            
+            context_info = f"""
+## 当前上下文
 
-- 题材：{context.genre}
-- 风格：{context.tone}
-- 目标字数：{context.target_word_count}字
-- 章节数：{context.chapter_count}章
-
-请设计：
-1. 卷结构（分几卷，每卷主题）
-2. 主线剧情
-3. 情感线
-4. 核心冲突
-5. 升级体系
 """
+            if pending_hooks:
+                context_info += f"### 待回收伏笔\n"
+                for hook in pending_hooks[:3]:
+                    context_info += f"- {hook.get('content', '')}\n"
         
-        response = self.llm.generate(
-            system_prompt=self.get_system_prompt(),
-            user_prompt=prompt,
-            max_tokens=2000,
-            temperature=0.7
+        prompt = f"""请为第{volume_num}卷第{chapter_num}章设计详细大纲：
+
+{context_info}
+
+{f"## 作者指导\n{guidance}\n" if guidance else ""}
+
+请输出JSON格式：
+```json
+{{
+    "title": "章节标题",
+    "synopsis": "章节概要（200字）",
+    "core_event": "核心事件",
+    "conflict": "主要冲突",
+    "shuangdian": "爽点设计",
+    "hook": "章尾钩子",
+    "scenes": [
+        {{"location": "地点", "time": "时间", "characters": ["角色"], "goal": "目标", "conflict": "冲突"}}
+    ]
+}}
+```"""
+        
+        try:
+            response = self.llm.chat(
+                messages=[{"role": "user", "content": prompt}],
+                system=self.get_system_prompt(),
+                temperature=0.7,
+                max_tokens=1500
+            )
+            
+            return self._parse_chapter_plan(response.content, chapter_num, volume_num)
+        except Exception as e:
+            return self._fallback_plan(chapter_num, volume_num)
+    
+    def _fallback_plan(self, chapter_num: int, volume_num: int) -> 'ChapterOutlineResult':
+        """备用大纲规划"""
+        if chapter_num == 1:
+            title = "意外的开始"
+            synopsis = "主角身处困境，面临重大抉择。一个神秘机缘的出现，打破了平静的生活..."
+            shuangdian = "金手指初现"
+            hook = "更大的危机即将来临"
+        elif chapter_num == 2:
+            title = "初露锋芒"
+            synopsis = "主角开始探索自己的能力，在小试牛刀中获得信心..."
+            shuangdian = "小试牛刀成功"
+            hook = "更强的敌人出现"
+        elif chapter_num == 3:
+            title = "危机降临"
+            synopsis = "敌人来袭，主角陷入绝境，但也是展现潜力的时刻..."
+            shuangdian = "绝境逆袭"
+            hook = "神秘势力介入"
+        else:
+            title = f"第{chapter_num}章"
+            synopsis = "剧情继续推进，主角在挑战中成长..."
+            shuangdian = "稳扎稳打"
+            hook = "新的机遇出现"
+        
+        return ChapterOutlineResult(
+            title=title,
+            synopsis=synopsis,
+            core_event="情节推进",
+            conflict="困难与挑战",
+            shuangdian=shuangdian,
+            hook=hook,
+            scenes=[]
         )
+    
+    def _parse_chapter_plan(
+        self,
+        response: str,
+        chapter_num: int,
+        volume_num: int
+    ) -> 'ChapterOutlineResult':
+        """解析章节规划响应"""
+        import json
+        import re
         
-        return self._parse_structure_response(response, context)
+        json_match = re.search(r'```json\s*(.*?)\s*```', response, re.DOTALL)
+        if json_match:
+            try:
+                data = json.loads(json_match.group(1))
+                return ChapterOutlineResult(
+                    title=data.get('title', f'第{chapter_num}章'),
+                    synopsis=data.get('synopsis', ''),
+                    core_event=data.get('core_event', ''),
+                    conflict=data.get('conflict', ''),
+                    shuangdian=data.get('shuangdian', ''),
+                    hook=data.get('hook', ''),
+                    scenes=data.get('scenes', [])
+                )
+            except json.JSONDecodeError:
+                pass
+        
+        return ChapterOutlineResult(
+            title=f'第{chapter_num}章',
+            synopsis=response[:500] if response else '',
+            core_event='',
+            conflict='',
+            shuangdian='',
+            hook='',
+            scenes=[]
+        )
     
     def design_volume_outline(
         self,
         volume_num: int,
-        volume_title: str,
         chapter_count: int,
         genre: str
     ) -> List[Dict[str, str]]:
         """设计单卷章节大纲"""
-        if not self.llm:
-            return self._fallback_chapter_outlines(volume_num, chapter_count)
-        
-        prompt = f"""请为第{volume_num}卷「{volume_title}」设计{chapter_count}章的大纲：
-
-题材：{genre}
-
-每章大纲需包含：
-- 章节核心事件
-- 主要冲突
-- 爽点设计
-- 悬念钩子
-
-请按以下格式输出：
-第1章：标题 | 核心事件 | 冲突 | 爽点 | 悬念
-第2章：...
-"""
-        
-        response = self.llm.generate(
-            system_prompt=self.get_system_prompt(),
-            user_prompt=prompt,
-            max_tokens=1500,
-            temperature=0.7
-        )
-        
-        return self._parse_chapter_outlines(response, volume_num)
-    
-    def design_chapter_outline(
-        self,
-        chapter_num: int,
-        volume_num: int,
-        previous_outline: str,
-        genre: str
-    ) -> str:
-        """设计单章详细大纲"""
-        if not self.llm:
-            return self._fallback_chapter_outline(chapter_num)
-        
-        prompt = f"""请设计第{volume_num}卷第{chapter_num}章的详细大纲：
-
-题材：{genre}
-
-前章大纲：
-{previous_outline}
-
-请设计：
-1. 章节标题
-2. 核心事件（200字）
-3. 情节发展（详细）
-4. 情感转折
-5. 悬念/伏笔
-6. 爽点设计
-7. 章尾钩子
-"""
-        
-        response = self.llm.generate(
-            system_prompt=self.get_system_prompt(),
-            user_prompt=prompt,
-            max_tokens=1000,
-            temperature=0.7
-        )
-        
-        return response
-    
-    def _fallback_structure(self, context: OutlineContext) -> Dict[str, Any]:
-        """备用结构设计"""
-        volume_count = max(1, context.chapter_count // 30)
-        chapters_per_volume = context.chapter_count // volume_count
-        
-        volumes = []
-        for i in range(volume_count):
-            volumes.append({
-                "volume_num": i + 1,
-                "volume_title": f"第{i+1}卷",
-                "chapter_range": f"第{i*chapters_per_volume+1}章-第{(i+1)*chapters_per_volume}章",
-                "theme": "发展" if i > 0 else "开局",
-                "arc_goal": "建立世界观" if i == 0 else "推进主线"
-            })
-        
-        return {
-            "volume_count": volume_count,
-            "chapters_per_volume": chapters_per_volume,
-            "volumes": volumes,
-            "total_chapters": context.chapter_count,
-            "estimated_word_count": context.target_word_count
-        }
-    
-    def _fallback_chapter_outlines(
-        self,
-        volume_num: int,
-        chapter_count: int
-    ) -> List[Dict[str, str]]:
-        """备用章节大纲"""
         outlines = []
-        
         for i in range(chapter_count):
-            chapter_num = i + 1
-            
-            if chapter_num == 1:
-                event = "开局冲突建立，主角出场"
-                conflict = "主角困境"
-                shuangdian = "金手指初现"
-                hook = "悬念留白"
-            elif chapter_num == 2:
-                event = "金手指展示"
-                conflict = "能力受限"
-                shuangdian = "小试牛刀"
-                hook = "更大的危机"
-            elif chapter_num == 3:
-                event = "第一次高潮"
-                conflict = "强敌出现"
-                shuangdian = "越级战胜"
-                hook = "身份暴露危机"
-            else:
-                event = "情节推进"
-                conflict = "新障碍"
-                shuangdian = "稳扎稳打"
-                hook = "下一章预告"
-            
+            ch_num = i + 1
+            outline = self.plan_chapter(ch_num, volume_num)
             outlines.append({
-                "chapter_num": chapter_num,
-                "title": f"第{chapter_num}章",
-                "core_event": event,
-                "conflict": conflict,
-                "shuangdian": shuangdian,
-                "hook": hook
+                "chapter_num": ch_num,
+                "title": outline.title,
+                "synopsis": outline.synopsis
             })
-        
         return outlines
-    
-    def _fallback_chapter_outline(self, chapter_num: int) -> str:
-        """备用单章大纲"""
-        return f"""第{chapter_num}章大纲
 
-核心事件：情节推进
-情节发展：
-- 开局冲突
-- 中段发展
-- 结尾高潮
 
-情感转折：角色成长
-悬念/伏笔：待回收
-爽点设计：根据题材
-章尾钩子：引发好奇
-"""
+@dataclass
+class ChapterOutlineResult:
+    """章节大纲结果"""
+    title: str
+    synopsis: str = ""
+    core_event: str = ""
+    conflict: str = ""
+    shuangdian: str = ""
+    hook: str = ""
+    scenes: List[Dict] = None
     
-    def _parse_structure_response(
-        self,
-        response: str,
-        context: OutlineContext
-    ) -> Dict[str, Any]:
-        """解析结构响应"""
-        return {
-            "response": response,
-            "volume_count": max(1, context.chapter_count // 30),
-            "chapters_per_volume": context.chapter_count // max(1, context.chapter_count // 30)
-        }
-    
-    def _parse_chapter_outlines(
-        self,
-        response: str,
-        volume_num: int
-    ) -> List[Dict[str, str]]:
-        """解析章节大纲响应"""
-        outlines = []
-        lines = response.strip().split('\n')
-        
-        for line in lines:
-            if '：' in line or ':' in line:
-                outlines.append({
-                    "chapter_num": len(outlines) + 1,
-                    "raw": line
-                })
-        
-        if not outlines:
-            return self._fallback_chapter_outlines(volume_num, 10)
-        
-        return outlines
+    def __post_init__(self):
+        if self.scenes is None:
+            self.scenes = []

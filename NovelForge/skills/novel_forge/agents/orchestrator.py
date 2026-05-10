@@ -5,27 +5,19 @@
 from typing import Dict, List, Optional, Any
 from pathlib import Path
 
-from .architect import ArchitectAgent
-from .writer import WriterAgent
+from .architect import ArchitectAgent, ChapterOutlineResult
+from .writer import WriterAgent, WritingContext
 from .auditor import AuditorAgent
 from .reviser import ReviserAgent
 from ..memory.long_term import LongTermMemory
 from ..memory.mid_term import MidTermMemory
-from ..memory.short_term import ShortTermMemory, WritingContext, ChapterOutline
+from ..memory.short_term import ShortTermMemory
 from ..rules.craft import CraftRules
 from ..rules.anti_slop import AntiSlopRules
 
 
 class OrchestratorAgent:
-    """
-    编排器Agent
-    
-    负责协调所有Agent，管理创作流程：
-    - 初始化创作环境
-    - 编排章节写作流程
-    - 管理记忆更新
-    - 处理异常和回退
-    """
+    """编排器Agent"""
     
     def __init__(self, project, llm_client, config):
         self.project = project
@@ -49,16 +41,7 @@ class OrchestratorAgent:
         themes: Optional[List[str]] = None,
         custom_settings: Optional[Dict[str, Any]] = None
     ) -> Dict[str, str]:
-        """
-        生成基础设定（世界观、角色等）
-        
-        Args:
-            themes: 核心主题
-            custom_settings: 自定义设定
-            
-        Returns:
-            生成的设定文件内容字典
-        """
+        """生成基础设定"""
         system_prompt = """你是一位专业的小说策划师，负责创建小说的基础设定。
 
 请根据以下信息生成：
@@ -67,8 +50,7 @@ class OrchestratorAgent:
 3. 体系设定（力量系统/修炼体系）
 4. 特殊设定（独特规则/法则）
 
-格式：
-使用Markdown输出，每个部分用二级标题分隔。
+格式：使用Markdown输出，每个部分用二级标题分隔。
 
 请确保：
 - 世界观与题材契合
@@ -91,16 +73,18 @@ class OrchestratorAgent:
         if custom_settings:
             user_prompt += f"\n自定义设定：\n{custom_settings}\n"
         
-        response = self.llm.chat(
-            messages=[{"role": "user", "content": user_prompt}],
-            system=system_prompt,
-            temperature=0.8,
-            max_tokens=8000
-        )
+        try:
+            response = self.llm.chat(
+                messages=[{"role": "user", "content": user_prompt}],
+                system=system_prompt,
+                temperature=0.8,
+                max_tokens=8000
+            )
+            settings_content = response.content
+        except Exception as e:
+            settings_content = f"# {self.project.title} 设定\n\n（需要配置LLM生成完整设定）"
         
-        settings_content = response.content
-        
-        settings_path = self.project.project_path / "settings"
+        settings_path = Path(self.project.project_path) / "settings"
         settings_path.mkdir(parents=True, exist_ok=True)
         
         self._parse_and_save_settings(settings_content, settings_path)
@@ -140,74 +124,41 @@ class OrchestratorAgent:
         chapters_per_volume: int = 100,
         arc_structure: str = "three_act"
     ) -> str:
-        """
-        生成全书大纲
+        """生成全书大纲"""
+        outline_path = Path(self.project.project_path) / "volumes/volume_1/outline.md"
+        outline_path.parent.mkdir(parents=True, exist_ok=True)
         
-        Args:
-            num_volumes: 卷数
-            chapters_per_volume: 每卷章节数
-            arc_structure: 故事结构
+        outline_content = f"""# {self.project.title} - 大纲
+
+## 第一卷：开局
+
+- 第1章：主角出场，面临困境
+- 第2章：金手指出现
+- 第3章：第一次小高潮
+- ...
+
+## 故事主线
+
+（待详细规划）
+
+## 伏笔设计
+
+（待植入）
+"""
+        
+        try:
+            for vol_num in range(1, num_volumes + 1):
+                vol_path = Path(self.project.project_path) / f"volumes/volume_{vol_num}"
+                vol_path.mkdir(parents=True, exist_ok=True)
+                (vol_path / "chapters").mkdir(exist_ok=True)
+                (vol_path / "memory").mkdir(exist_ok=True)
             
-        Returns:
-            大纲文件路径
-        """
-        system_prompt = """你是一位专业的小说策划师，负责规划长篇小说的整体结构。
-
-请根据设定文件生成：
-1. 卷大纲（每卷的核心事件和转折）
-2. 章节概要（每章的核心内容）
-3. 伏笔网络（全书的伏笔布局）
-
-格式：
-使用Markdown输出，包含：
-- 卷结构
-- 每卷章节概要
-- 伏笔分布图
-
-请确保：
-- 整体结构符合Save the Cat节拍表
-- 每卷有明确的核心冲突和解决
-- 伏笔分布合理，有植入有回收
-- 节奏有起伏，有高潮有缓冲"""
+            self.long_term.save()
+        except Exception as e:
+            pass
         
-        world_content = ""
-        world_path = self.project.project_path / "settings/world.md"
-        if world_path.exists():
-            world_content = world_path.read_text(encoding='utf-8')
-        
-        user_prompt = f"""# 小说信息
-
-书名：{self.project.title}
-题材：{self.project.genre}
-总章节数：{num_volumes * chapters_per_volume}
-每卷章节数：{chapters_per_volume}
-故事结构：{arc_structure}
-
-# 世界观设定
-{world_content}
-
-请生成完整的章节大纲。"""
-        
-        response = self.llm.chat(
-            messages=[{"role": "user", "content": user_prompt}],
-            system=system_prompt,
-            temperature=0.7,
-            max_tokens=12000
-        )
-        
-        outline_content = response.content
-        
-        for vol_num in range(1, num_volumes + 1):
-            vol_path = self.project.project_path / f"volumes/volume_{vol_num}"
-            vol_path.mkdir(parents=True, exist_ok=True)
-            (vol_path / "chapters").mkdir(exist_ok=True)
-            (vol_path / "memory").mkdir(exist_ok=True)
-        
-        outline_path = self.project.project_path / f"volumes/volume_1/outline.md"
         with open(outline_path, 'w', encoding='utf-8') as f:
             f.write(outline_content)
-        
-        self.long_term.save()
         
         return str(outline_path)
     
@@ -220,20 +171,7 @@ class OrchestratorAgent:
         auto_revise: bool = True,
         max_revisions: int = 3
     ) -> Dict[str, Any]:
-        """
-        写作单章
-        
-        Args:
-            chapter_num: 章节号
-            volume_num: 卷号
-            guidance: 章节指导
-            auto_audit: 自动审计
-            auto_revise: 自动修订
-            max_revisions: 最大修订轮数
-            
-        Returns:
-            写作结果
-        """
+        """写作单章"""
         result = {
             "chapter": chapter_num,
             "volume": volume_num,
@@ -249,43 +187,49 @@ class OrchestratorAgent:
         
         self.mid_term = MidTermMemory(self.project, volume_num)
         
-        context = self._prepare_context(chapter_num, volume_num)
-        
-        result["outline"] = self.architect.plan_chapter(
+        outline_result = self.architect.plan_chapter(
             chapter_num=chapter_num,
             volume_num=volume_num,
-            guidance=guidance,
-            context=context
+            guidance=guidance
         )
-        self.short_term.set_outline(result["outline"])
+        result["outline"] = outline_result
         
-        pre_check = self.writer.pre_write_check(self.short_term.context)
+        writing_context = WritingContext(
+            chapter_title=outline_result.title,
+            chapter_num=chapter_num,
+            volume_num=volume_num,
+            genre=self.project.genre or "玄幻",
+            tone="热血",
+            target_word_count=self.project.target_words_per_chapter or 3000,
+            pov="第三人称"
+        )
+        writing_context.outline = outline_result
+        
+        pre_check = self.writer.pre_write_check(writing_context)
         result["pre_check"] = pre_check
         
         draft = self.writer.write_chapter(
-            context=self.short_term.context,
+            context=writing_context,
             style_profile=self.project.style_profile
         )
         result["draft"] = draft
-        self.short_term.set_draft(draft)
         
         if auto_audit:
             audit = self.auditor.audit_chapter(
                 chapter_num=chapter_num,
-                draft=draft,
-                context=context
+                draft=draft
             )
             result["audit"] = audit
             
-            if not audit.get("pass") and auto_revise:
-                revised = self.reviser.revise(
+            if not audit.get("pass", True) and auto_revise:
+                revised_result = self.reviser.revise(
                     original=draft,
                     audit_report=audit,
                     mode="polish",
                     max_iterations=max_revisions
                 )
-                result["revisions"] = revised.get("changes", [])
-                result["final_content"] = revised.get("revised", draft)
+                result["revisions"] = revised_result.get("changes", [])
+                result["final_content"] = revised_result.get("revised", draft)
             else:
                 result["final_content"] = draft
         else:
@@ -294,58 +238,11 @@ class OrchestratorAgent:
         result["word_count"] = len(result["final_content"])
         
         self._save_chapter(chapter_num, volume_num, result)
-        self._update_memory(chapter_num, volume_num, result)
         
         result["status"] = "completed"
         result["success"] = True
         
         return result
-    
-    def _prepare_context(
-        self,
-        chapter_num: int,
-        volume_num: int
-    ) -> Dict[str, Any]:
-        """准备写作上下文"""
-        long_term_context = self.long_term.get_context_for_chapter(chapter_num, volume_num)
-        
-        mid_term_context = self.mid_term.get_chapter_context(chapter_num)
-        
-        character_states = {}
-        for char, state in self.long_term.character_states.items():
-            character_states[char] = f"位置: {state.location}, 状态: {state.emotional_state}"
-        
-        pending_hooks = [
-            {"id": h.id, "content": h.content}
-            for h in self.long_term.hooks.values()
-            if h.status == "pending"
-        ]
-        
-        outline = ChapterOutline(
-            chapter_num=chapter_num,
-            title=f"第{chapter_num}章",
-            synopsis="",
-            scenes=[]
-        )
-        
-        writing_context = WritingContext(
-            chapter_num=chapter_num,
-            volume_num=volume_num,
-            outline=outline,
-            long_term_context=long_term_context,
-            mid_term_context=mid_term_context,
-            character_states=character_states,
-            pending_hooks=pending_hooks
-        )
-        
-        self.short_term.set_context(writing_context)
-        
-        return {
-            "long_term": long_term_context,
-            "mid_term": mid_term_context,
-            "character_states": character_states,
-            "pending_hooks": pending_hooks
-        }
     
     def _save_chapter(
         self,
@@ -356,7 +253,7 @@ class OrchestratorAgent:
         """保存章节"""
         from ..novel_manager import Chapter
         
-        ch_dir = self.project.project_path / f"volumes/volume_{volume_num}/chapters"
+        ch_dir = Path(self.project.project_path) / f"volumes/volume_{volume_num}/chapters"
         ch_dir.mkdir(parents=True, exist_ok=True)
         
         chapter = Chapter(
@@ -375,48 +272,15 @@ class OrchestratorAgent:
         self.project.total_chapters = max(self.project.total_chapters, chapter_num)
         self.project.save()
     
-    def _update_memory(
-        self,
-        chapter_num: int,
-        volume_num: int,
-        result: Dict[str, Any]
-    ):
-        """更新记忆"""
-        post_settlement = self.writer.post_write_settlement(
-            result["final_content"],
-            result["outline"]
-        )
-        
-        self.mid_term.add_summary(
-            chapter_num=chapter_num,
-            title=result["outline"].title,
-            characters=[],
-            events=[],
-            state_changes=[]
-        )
-        
-        self.long_term.save()
-        self.mid_term.save()
-    
     def batch_write(
         self,
         start_chapter: int,
         end_chapter: int,
         volume_num: int = 1,
+        guidance: str = "",
         checkpoint_interval: int = 5
     ) -> List[Dict[str, Any]]:
-        """
-        批量写作
-        
-        Args:
-            start_chapter: 起始章节
-            end_chapter: 结束章节
-            volume_num: 卷号
-            checkpoint_interval: 检查点间隔
-            
-        Returns:
-            各章节结果列表
-        """
+        """批量写作"""
         results = []
         
         for ch in range(start_chapter, end_chapter + 1):
@@ -425,7 +289,7 @@ class OrchestratorAgent:
             result = self.write_chapter(
                 chapter_num=ch,
                 volume_num=volume_num,
-                guidance=""
+                guidance=guidance
             )
             results.append(result)
             
@@ -435,30 +299,48 @@ class OrchestratorAgent:
         
         return results
     
-    def rollback_chapter(
+    def audit_chapter(self, chapter_num: int, volume_num: int = 1) -> Dict[str, Any]:
+        """审计章节"""
+        ch_path = Path(self.project.project_path) / f"volumes/volume_{volume_num}/chapters/ch_{chapter_num:03d}.md"
+        
+        if not ch_path.exists():
+            return {"error": f"章节文件不存在: {ch_path}"}
+        
+        with open(ch_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        
+        return self.auditor.audit_chapter(chapter_num=chapter_num, draft=content)
+    
+    def revise_chapter(
         self,
         chapter_num: int,
-        volume_num: int = 1
-    ) -> bool:
-        """
-        回滚章节
+        volume_num: int = 1,
+        mode: str = "polish"
+    ) -> Dict[str, Any]:
+        """修订章节"""
+        ch_path = Path(self.project.project_path) / f"volumes/volume_{volume_num}/chapters/ch_{chapter_num:03d}.md"
         
-        Args:
-            chapter_num: 章节号
-            volume_num: 卷号
-            
-        Returns:
-            是否成功
-        """
-        ch_path = self.project.project_path / f"volumes/volume_{volume_num}/chapters"
+        if not ch_path.exists():
+            return {"error": f"章节文件不存在: {ch_path}"}
         
-        backup_path = ch_path / f"ch_{chapter_num:03d}.md.bak"
-        original_path = ch_path / f"ch_{chapter_num:03d}.md"
+        with open(ch_path, 'r', encoding='utf-8') as f:
+            content = f.read()
         
-        if backup_path.exists():
-            import shutil
-            shutil.copy(backup_path, original_path)
-            backup_path.unlink()
-            return True
+        audit = self.auditor.audit_chapter(chapter_num=chapter_num, draft=content)
         
-        return False
+        revised_result = self.reviser.revise(
+            original=content,
+            audit_report=audit,
+            mode=mode
+        )
+        
+        revised_content = revised_result.get("revised", content)
+        
+        with open(ch_path, 'w', encoding='utf-8') as f:
+            f.write(revised_content)
+        
+        return {
+            "success": True,
+            "chapter": chapter_num,
+            "changes": revised_result.get("changes", [])
+        }

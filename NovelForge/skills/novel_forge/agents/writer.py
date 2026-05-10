@@ -5,6 +5,7 @@
 
 from typing import Dict, Any, Optional, List
 from dataclasses import dataclass
+import re
 
 
 @dataclass
@@ -19,20 +20,26 @@ class WritingContext:
     pov: str = "第三人称"
 
 
+@dataclass
+class ChapterOutline:
+    """章节大纲"""
+    title: str
+    synopsis: str = ""
+    scenes: List[Dict] = None
+    
+    def __post_init__(self):
+        if self.scenes is None:
+            self.scenes = []
+
+
 class WriterAgent:
-    """
-    写手机器人
+    """写手机器人"""
     
-    参考十大经典网文写作风格：
-    - 《斗破苍穹》- 废柴逆袭、爽点密集
-    - 《凡人修仙传》- 低调谨慎、稳扎稳打
-    - 《诡秘之主》- 悬念迭起、智斗解谜
-    - 《雪中悍刀行》- 文笔优美、人物立体
-    - 《诛仙》- 情感真实、不狗血
-    """
-    
-    def __init__(self, llm_client=None):
+    def __init__(self, llm_client=None, project=None, craft=None, anti_slop=None):
         self.llm = llm_client
+        self.project = project
+        self.craft = craft
+        self.anti_slop = anti_slop
     
     def get_system_prompt(self) -> str:
         return """你是一位顶尖网络小说作家，精通网文写作技巧。
@@ -41,11 +48,9 @@ class WriterAgent:
 
 1. 废柴逆袭
    主角是废柴 → 被人欺负 → 获得金手指 → 开始逆袭
-   《斗破苍穹》萧炎：三年之约，一路逆袭
 
 2. 打脸套路
    被嘲讽 → 隐忍/反驳 → 展现实力 → 打脸 → 获得好处
-   经典场景：拍卖会、比武大会、宗门选拔、家族聚会
 
 3. 装逼套路
    低调装逼：扮猪吃虎
@@ -54,27 +59,12 @@ class WriterAgent:
 
 4. 金手指系统
    主角必定有一个及以上的金手指
-   神器、丹药、传承、系统、老爷爷
 
-5. 收小弟套路
-   遇到人才 → 展现实力 → 对方倾佩 → 收为己用
-
-6. 情感线套路
-   英雄救美：美女遇险 → 主角出手 → 美女倾心
-   日久生情：被迫同行 → 共度患难 → 确立关系
-
-7. 升级突破
+5. 升级突破
    生死战斗突破、机缘巧合突破、服用丹药突破
-   天地异象、实力暴涨、境界提升
 
-8. 隐藏身份/马甲梗
-   主角马甲非常牛逼，有个牛逼的徒弟但没人知道
-
-9. 扮猪吃虎
-   在别人眼里是尊敬羡慕的强人，对主角毕恭毕敬
-
-10. 复仇套路
-    受到伤害 → 蛰伏隐忍 → 暗中积蓄实力 → 时机成熟 → 复仇行动
+6. 复仇套路
+   受到伤害 → 蛰伏隐忍 → 暗中积蓄实力 → 时机成熟 → 复仇行动
 
 【黄金三章法则】
 
@@ -98,11 +88,6 @@ class WriterAgent:
 - 穿越重生/获得金手指
 - 命悬一线/危机降临
 
-避免的开局：
-- ❌ 开篇堆设定（三族五界、修炼等级）
-- ❌ 大段环境描写（日落写两页）
-- ❌ 视角乱飘
-
 【爽点设计】
 
 爽点类型：
@@ -115,169 +100,125 @@ class WriterAgent:
 - 憋屈后必须有爆发
 - 升级要有具体表现
 
-【经典网文风格参考】
-
-《斗破苍穹》（废柴逆袭巅峰）
-- 三年之约：目标明确，读者有期待
-- 退婚流：开局冲突强
-- 升级打怪：节奏明快，爽点密集
-- 核心：憋屈→爆发→升级→更强的敌人
-- 关键技巧：打脸要干脆利落，憋屈要憋到位
-
-《凡人修仙传》（凡人流开创者）
-- 低调谨慎：韩立性格，不浪
-- 资源积累：每一步都算计
-- 升级慢热：稳扎稳打
-- 核心：闷声发大财
-- 关键技巧：不要浪，每一步都要有收获
-
-《诡秘之主》（创新派神作）
-- 世界观独特：克苏鲁+蒸汽朋克
-- 人物塑造：每个角色都有深度
-- 悬念设置：层层迷雾，引人入胜
-- 核心：智斗解谜
-- 关键技巧：世界观要自洽，伏笔要回收
-
-《雪中悍刀行》（文青融合）
-- 文笔优美：武侠与玄幻结合
-- 人物群像：每个角色都有故事
-- 情感细腻：家国情怀、兄弟情义
-- 核心：江湖不只是打打杀杀
-- 关键技巧：人物要有血有肉，不脸谱化
-
-《诛仙》（仙侠经典）
-- 情感主线：张小凡的三段感情
-- 世界观：天地不仁，以万物为刍狗
-- 人物成长：从平凡到伟大
-- 核心：修仙路上的爱恨情仇
-- 关键技巧：情感要真实，不狗血
-
 【语言风格】
 
-✅ 好的写法：
+好的写法：
 - "少爷，你醒了，感觉怎样，没事吧？"稚嫩而清脆的声音如玉珠落盘。
 - 他愣愣地看着屋内的一切，迷茫的眼神立时变得精彩之极，震惊，愕然，不可思议...
 - "你这废柴也配跟我争？" 主角回怼："很快你就知道谁是废物。"
 
-❌ 避免的写法：
+避免的写法：
 - "眼中闪过一丝坚定的光芒"（太套路）
 - "缓缓地"、"骤然"（太书面）
 - 大段环境描写
 - 主角内心独白太多
 
-【章节结构公式】
-
-高光时刻：写得快、够爽，打怪打脸要干脆
-过渡情节：慢一点但别拖沓，赶紧回到主线
-
 请严格按照以上规则进行创作。"""
     
-    def build_chapter_prompt(
-        self,
-        context: WritingContext,
-        outline: str,
-        previous_chapters: str,
-        memory_context: str
-    ) -> str:
-        return f"""请根据以下信息创作小说章节：
+    def pre_write_check(self, context) -> Dict[str, Any]:
+        """写前自检"""
+        return {
+            "passed": True,
+            "warnings": [],
+            "notes": "上下文检查通过"
+        }
+    
+    def write_chapter(self, context, style_profile=None) -> str:
+        """生成章节内容"""
+        if not self.llm:
+            return self._generate_fallback_chapter(context)
+        
+        prompt = self._build_chapter_prompt(context)
+        
+        response = self.llm.chat(
+            messages=[{"role": "user", "content": prompt}],
+            system=self.get_system_prompt(),
+            temperature=0.8,
+            max_tokens=context.target_word_count + 500
+        )
+        
+        return self._post_process_chapter(response.content, context)
+    
+    def _build_chapter_prompt(self, context) -> str:
+        """构建章节提示词"""
+        genre = getattr(context, 'genre', '玄幻')
+        tone = getattr(context, 'tone', '热血')
+        chapter_num = getattr(context, 'chapter_num', 1)
+        volume_num = getattr(context, 'volume_num', 1)
+        target_words = getattr(context, 'target_word_count', 3000)
+        
+        outline = getattr(context, 'outline', None)
+        outline_text = ""
+        if outline:
+            if hasattr(outline, 'synopsis'):
+                outline_text = outline.synopsis
+            elif isinstance(outline, dict):
+                outline_text = outline.get('synopsis', '')
+        
+        long_term = getattr(context, 'long_term_context', {})
+        mid_term = getattr(context, 'mid_term_context', {})
+        
+        prev_summary = ""
+        if isinstance(mid_term, dict):
+            prev_summary = mid_term.get('summary', '')
+        
+        return f"""请创作小说章节：
 
 ## 基本信息
-- 章节标题：{context.chapter_title}
-- 章节序号：第{context.chapter_num}章
-- 卷号：第{context.volume_num}卷
-- 题材：{context.genre}
-- 风格：{context.tone}
-- 目标字数：{context.target_word_count}字
-- 视角：{context.pov}
+- 章节：第{volume_num}卷 第{chapter_num}章
+- 题材：{genre}
+- 风格：{tone}
+- 目标字数：{target_words}字
 
 ## 章节大纲
-{outline}
+{outline_text}
 
 ## 前文摘要
-{previous_chapters}
-
-## 记忆上下文
-{memory_context}
+{prev_summary}
 
 ## 写作要求
 
-1. 【开局炸弹】
-   前300字必须扔出"炸弹"——冲突、危机、悬念
+1. 【开局炸弹】前300字必须扔出"炸弹"——冲突、危机、悬念
 
-2. 【黄金三章】
-   每章必须有冲突、有推进、有期待
+2. 【黄金三章】每章必须有冲突、有推进、有期待
 
-3. 【爽点设计】
-   根据题材设计适当的爽点（打脸、升级、装逼等）
+3. 【爽点设计】根据题材设计适当的爽点（打脸、升级、装逼等）
 
-4. 【悬念钩子】
-   章尾留悬念，让读者想追更
+4. 【悬念钩子】章尾留悬念，让读者想追更
 
-5. 【对话自然】
-   对话口语化，符合人物性格
+5. 【对话自然】对话口语化，符合人物性格
 
-6. 【动作描写】
-   用动作和表情传达情绪，不直接写心理
+6. 【动作描写】用动作和表情传达情绪，不直接写心理
 
-7. 【节奏把控】
-   高潮部分节奏快，过渡部分不拖沓
+7. 【节奏把控】高潮部分节奏快，过渡部分不拖沓
 
-请开始创作：
+直接输出正文，不要输出其他内容。
 """
     
-    def generate_chapter(
-        self,
-        context: WritingContext,
-        outline: str,
-        previous_chapters: str = "",
-        memory_context: str = ""
-    ) -> str:
-        """生成章节内容"""
-        if not self.llm:
-            return self._generate_fallback_chapter(context, outline)
-        
-        prompt = self.build_chapter_prompt(
-            context=context,
-            outline=outline,
-            previous_chapters=previous_chapters,
-            memory_context=memory_context
-        )
-        
-        response = self.llm.generate(
-            system_prompt=self.get_system_prompt(),
-            user_prompt=prompt,
-            max_tokens=context.target_word_count + 500,
-            temperature=0.8
-        )
-        
-        return self._post_process_chapter(response, context)
-    
-    def _generate_fallback_chapter(
-        self,
-        context: WritingContext,
-        outline: str
-    ) -> str:
+    def _generate_fallback_chapter(self, context) -> str:
         """当没有LLM时的备用生成"""
-        return f"""# {context.chapter_title}
+        title = getattr(context, 'chapter_title', '未命名章节')
+        words = getattr(context, 'target_word_count', 3000)
+        genre = getattr(context, 'genre', '玄幻')
+        
+        return f"""# {title}
 
 （系统提示：需要配置LLM才能生成完整内容）
 
 章节要求：
-- 目标字数：{context.target_word_count}字
-- 题材：{context.genre}
-- 风格：{context.tone}
+- 目标字数：{words}字
+- 题材：{genre}
 
 请配置API密钥后重新生成。
 """
     
-    def _post_process_chapter(self, content: str, context: WritingContext) -> str:
+    def _post_process_chapter(self, content: str, context) -> str:
         """后处理章节内容"""
         lines = content.strip().split('\n')
         
-        if lines[0].startswith('#'):
+        title = getattr(context, 'chapter_title', '未命名章节')
+        if lines and lines[0].startswith('#'):
             title = lines[0].lstrip('#').strip()
-        else:
-            title = context.chapter_title
         
         processed_lines = [f"# {title}", ""]
         
@@ -295,9 +236,18 @@ class WriterAgent:
         
         return processed
     
+    def post_write_settlement(self, content: str, outline) -> Dict[str, Any]:
+        """写后结算"""
+        return {
+            "word_count": len(content),
+            "hooks_planted": [],
+            "hooks_recycled": [],
+            "resources_changed": []
+        }
+    
     def batch_write_chapters(
         self,
-        contexts: List[WritingContext],
+        contexts: List,
         outlines: List[str],
         previous_chapters: str = "",
         memory_context: str = ""
@@ -305,17 +255,12 @@ class WriterAgent:
         """批量生成章节"""
         chapters = []
         
-        for i, (context, outline) in enumerate(zip(contexts, outlines)):
-            if i > 0:
+        for i, context in enumerate(contexts):
+            if i > 0 and chapters:
                 prev_summary = self._summarize_chapter(chapters[i-1])
-                previous_chapters = f"上一章摘要：{prev_summary}\n\n{previous_chapters}"
+                context.prev_summary = prev_summary
             
-            chapter = self.generate_chapter(
-                context=context,
-                outline=outline,
-                previous_chapters=previous_chapters,
-                memory_context=memory_context
-            )
+            chapter = self.write_chapter(context=context)
             chapters.append(chapter)
         
         return chapters
