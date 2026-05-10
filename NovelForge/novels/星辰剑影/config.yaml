@@ -1,6 +1,23 @@
-created_at: '2026-05-08T04:21:44.572955'
+author: AI
+current_chapter: 10
 genre: 玄幻
-synopsis: 陈墨，陈家遗孤，三年前家族被灭门，意外获得星辰剑典传承，誓要复仇
-target_chapters: 100
-target_words_per_chapter: 3000
+protagonist:
+  age: 18
+  background: 陈家少主，家族被灭
+  goal: 查明真相，复仇雪恨
+  golden_finger: 星辰剑典
+  name: 陈墨
+  personality: 沉稳冷静、心思缜密
+story_type: miemen
+target_chapters: 10
 title: 星辰剑影
+world:
+  genre: 玄幻
+  geography: 东域、中州、西域
+  history: 万年修仙文明
+  main_factions:
+  - 青云宗
+  - 天魔宫
+  - 皇室
+  name: 玄元大陆
+  power_system: 炼体、炼气、筑基、金丹、元婴
