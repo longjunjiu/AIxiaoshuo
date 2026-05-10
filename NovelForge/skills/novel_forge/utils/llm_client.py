@@ -23,7 +23,7 @@ class LLMClient:
     SUPPORTED_PROVIDERS = [
         "openai", "anthropic", "custom", 
         "huggingface", "ollama", "api2d",
-        "deepseek", "qwen", "zhipu", "nvidia"
+        "deepseek", "qwen", "zhipu", "nvidia", "minimax"
     ]
     
     def __init__(
@@ -61,7 +61,7 @@ class LLMClient:
             "qwen": "https://api.qwenlm.com/v1",
             "zhipu": "https://open.bigmodel.cn/api/paas/v4",
             "nvidia": "https://integrate.api.nvidia.com/v1",
-            "minimax": "MiniMax-Text-01"
+            "minimax": "https://api.minimax.chat/v1"
         }
         return defaults.get(self.provider, "https://api.openai.com/v1")
     
@@ -176,7 +176,7 @@ class LLMClient:
             return self._chat_anthropic(messages, system, temp, mt, **kwargs)
         elif self.provider == "huggingface":
             return self._chat_huggingface(messages, system, temp, mt, **kwargs)
-        elif self.provider in ["openai", "ollama", "api2d", "deepseek", "qwen", "zhipu", "custom", "nvidia"]:
+        elif self.provider in ["openai", "ollama", "api2d", "deepseek", "qwen", "zhipu", "custom", "nvidia", "minimax"]:
             return self._chat_openai_compatible(messages, system, temp, mt, **kwargs)
         else:
             raise ValueError(f"不支持的LLM提供商: {self.provider}")
