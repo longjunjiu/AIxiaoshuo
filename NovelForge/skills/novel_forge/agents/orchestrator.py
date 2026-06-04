@@ -87,7 +87,8 @@ class MultiAgentOrchestrator:
         themes_str = "、".join(themes)
         settings: Dict[str, str] = {}
 
-        if self.llm:
+        llm_ready = self.llm and getattr(self.llm, "api_key", "")
+        if llm_ready:
             prompts = {
                 "world": (
                     f"请为以下小说生成详细的世界观设定（约1000字）：\n\n"
@@ -152,7 +153,7 @@ class MultiAgentOrchestrator:
         """生成全书大纲，返回大纲文件路径"""
         outline_path = Path(self.project.project_path) / "outline.md"
 
-        if self.llm:
+        if self.llm and getattr(self.llm, "api_key", ""):
             prompt = (
                 f"请为以下小说生成详细的全书大纲：\n\n"
                 f"书名：{self.project.title}\n题材：{self.project.genre}\n"

@@ -262,6 +262,17 @@ class PanelAgent:
 直接输出，不要使用JSON格式。
 """
         
+        if not self.llm:
+            return PersonaReview(
+                persona=panel_id,
+                name=panel_info["name"],
+                score=7.0,
+                verdict="修改后通过",
+                issues=[],
+                highlights=[],
+                reasoning="LLM 未配置，使用默认评分"
+            )
+
         try:
             response = self.llm.chat(
                 messages=[{"role": "user", "content": user_prompt}],
@@ -269,17 +280,15 @@ class PanelAgent:
                 temperature=0.4,
                 max_tokens=1500
             )
-            
+
             review_text = response.content
-            
             score = self._extract_score(review_text)
             verdict = self._extract_verdict(review_text)
             issues = self._extract_list(review_text, ["问题", "不足"])
             highlights = self._extract_list(review_text, ["亮点", "优点", "精彩"])
-            
+
         except Exception as e:
-            print(f"      ⚠️ 评审失败: {e}")
-            review_text = "LLM不可用，使用默认评分"
+            review_text = f"评审失败: {e}"
             score = 7.0
             verdict = "修改后通过"
             issues = []
