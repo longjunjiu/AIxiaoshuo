@@ -1,144 +1,97 @@
-# AIxiaoshuo - AI小说辅助创作系统
+# AIxiaoshuo — AI小说辅助创作系统
 
 <p align="center">
-  <img src="https://img.shields.io/github/stars/longjunjiu/AIxiaoshuo" alt="GitHub stars">
-  <img src="https://img.shields.io/github/forks/longjunjiu/AIxiaoshuo" alt="GitHub forks">
-  <img src="https://img.shields.io/github/license/longjunjiu/AIxiaoshuo" alt="License">
-  <img src="https://img.shields.io/github/languages/count/longjunjiu/AIxiaoshuo" alt="Languages">
+  <img src="https://img.shields.io/github/stars/longjunjiu/AIxiaoshuo" alt="stars">
+  <img src="https://img.shields.io/github/forks/longjunjiu/AIxiaoshuo" alt="forks">
+  <img src="https://img.shields.io/github/license/longjunjiu/AIxiaoshuo" alt="license">
+  <img src="https://img.shields.io/badge/python-3.9%2B-blue" alt="python">
 </p>
 
 <p align="center">
-  <strong>百万字级长篇网络小说AI辅助创作系统 | 多Agent协作 | 三层记忆 | 26维度质量审计</strong>
+  <strong>百万字级长篇网络小说 AI 辅助创作系统<br>多 Agent 协作 · 三层记忆 · LLM 深度审计 · 多层去 AI 味</strong>
 </p>
 
 ---
 
-## 🌟 为什么选择 AIxiaoshuo？
+## 为什么选择 AIxiaoshuo？
 
-| 传统写作 | AIxiaoshuo |
+| 传统写作痛点 | AIxiaoshuo 解法 |
 |:---|:---|
-| ❌ 灵感枯竭，卡文严重 | ✅ 90个情节方案库，创意无限 |
-| ❌ 前后矛盾，设定打架 | ✅ 三层记忆系统，全书一致性保障 |
-| ❌ AI味太重，读者出戏 | ✅ 多层去AI味处理，文风自然 |
-| ❌ 质量参差不齐 | ✅ 26维度质量审计，品质把控 |
-| ❌ 单模型生成，效果单一 | ✅ 多Agent协作，媲美专业编辑团队 |
+| 灵感枯竭，卡文严重 | 6 类冲突 × 90 个情节方案库 |
+| 前后矛盾，设定打架 | 三层记忆系统，全书一致性保障 |
+| AI 味太重，读者出戏 | 多层 AIGC 检测 + LLM 语义级润色 |
+| 质量参差不齐 | 26 维度质量审计 + 多视角评审团 |
+| 单模型生成，效果单一 | 5 Agent 协作，媲美专业编辑流程 |
 
 ---
 
-## 🎯 核心功能
+## 核心架构
 
-### 1️⃣ 多Agent协作系统
-
-```
-┌─────────────────────────────────────────────────────────┐
-│                    Orchestrator (编排器)                 │
-│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐   │
-│  │ Architect│ │  Writer  │ │ Auditor  │ │ Reviser  │   │
-│  │ (建筑师) │ │ (写手)   │ │ (审计)   │ │ (修订)   │   │
-│  └──────────┘ └──────────┘ └──────────┘ └──────────┘   │
-│                         ↓                                 │
-│                  ┌──────────┐                           │
-│                  │  Panel   │                           │
-│                  │ (评审团) │                           │
-│                  └──────────┘                           │
-└─────────────────────────────────────────────────────────┘
-```
-
-| Agent | 核心职责 | 输出 |
-|:---|:---|:---|
-| **Architect** | 规划章节结构、设计伏笔 | 章节大纲、伏笔设计 |
-| **Writer** | 生成高质量正文 | 章节内容 |
-| **Auditor** | 26维度质量审计 | 审计报告 |
-| **Reviser** | 文风优化、去AI味 | 修订后内容 |
-| **Panel** | 多视角评审 | 综合评价 |
-
-### 2️⃣ 三层记忆系统
+### 多 Agent 协作流程
 
 ```
-┌────────────────────────────────────────┐
-│         🧠 Long-term Memory           │
-│         (全书统一性保障)               │
-│  · 世界观设定 · 角色设定 · 体系规则   │
-├────────────────────────────────────────┤
-│         🧠 Mid-term Memory            │
-│         (当前卷剧情连贯)               │
-│  · 卷大纲 · 伏笔状态 · 资源账本       │
-├────────────────────────────────────────┤
-│         🧠 Short-term Memory          │
-│         (当前章上下文)                 │
-│  · 上章回顾 · 悬念钩子 · 角色状态     │
-└────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────┐
+│                   Orchestrator (编排器)                     │
+│                                                             │
+│  [1] Architect  →  [2] Writer  →  [3] Auditor              │
+│  (建筑师规划)       (写手生成)       (审计员检查)            │
+│                                         ↓                   │
+│                    [5] Panel   ←  [4] Reviser               │
+│                    (评审团投票)     (修订者优化)              │
+│                         ↓                                   │
+│               通过? → 保存  |  不通过? → 重新迭代            │
+└────────────────────────────────────────────────────────────┘
 ```
 
-### 3️⃣ 90个情节方案库
+| Agent | 核心职责 | LLM 可用时 | 无 LLM 时 |
+|:---|:---|:---|:---|
+| **Architect** | 规划章节结构、设计伏笔 | JSON 结构化大纲 | 内置模板大纲 |
+| **Writer** | 生成高质量正文 | LLM 全文生成 | 返回配置提示 |
+| **Auditor** | 26 维度质量审计 | LLM 深度评审 | 静态规则检测 |
+| **Reviser** | 文风优化、去 AI 味 | LLM 语义润色 | 规则替换 |
+| **Panel** | 5 视角多角色投票 | 独立评审 + 加权得分 | 默认 7.0 通过 |
 
-**6种冲突类型 × 5个章节阶段 × 3个情节方案**
+### 三层记忆系统
 
-| 冲突类型 | 适用场景 | 经典案例 |
-|:---|:---|:---|
-| 🔥 **退婚流** | 被打脸、复仇 | 《斗破苍穹》萧炎 vs 纳兰嫣然 |
-| ⚔️ **灭门流** | 绝境逆袭、复仇主线 | 《完美世界》石昊家族被灭 |
-| 💫 **废物流** | 扮猪吃虎、升级打脸 | 《斗罗大陆》唐三重生 |
-| 🚀 **穿越流** | 异界重生、独特视角 | 《庆余年》范闲 |
-| 🏆 **争锋流** | 天才竞争、宗门大比 | 《凡人修仙传》韩立修仙 |
-| 🌟 **逆袭流** | 小人物崛起、热血逆袭 | 《雪中悍刀行》徐凤年 |
+```
+┌────────────────────────────────────────────────┐
+│  Long-term Memory（全书级）                     │
+│  · 世界观设定  · 角色状态  · 伏笔网络          │
+│  · 真相文件    · 资源账本                      │
+├────────────────────────────────────────────────┤
+│  Mid-term Memory（卷级）                        │
+│  · 章节摘要    · 支线追踪  · 情感弧线          │
+├────────────────────────────────────────────────┤
+│  Short-term Memory（章节级）                   │
+│  · 当前大纲    · 写作上下文  · 草稿迭代        │
+└────────────────────────────────────────────────┘
+```
 
-### 4️⃣ 26维度质量审计
+**记忆与写作深度整合**：写手生成每章前，系统自动拉取三层记忆上下文（待回收伏笔、角色当前状态、前文摘要），注入提示词，保障叙事连贯性。
 
-| 维度类别 | 审计项 |
+### 26 维度质量审计
+
+| 类别 | 审计项（示例）|
 |:---|:---|
-| **剧情逻辑** | 逻辑自洽、因果关系、伏笔呼应 |
-| **人物塑造** | 性格一致、成长合理、对话自然 |
-| **文风质量** | 句式变化、用词精准、节奏把控 |
-| **世界观** | 设定统一、细节一致、体系自洽 |
-| **AIGC检测** | AI味识别、重复模式、模板检测 |
+| 剧情逻辑 | 情节自洽、因果关系、伏笔呼应、时间线一致 |
+| 人物塑造 | 性格一致、行为自洽、对话自然、信息边界 |
+| 文风质量 | 句式变化、节奏把控、AI 词汇密度 |
+| 世界观 | 设定统一、体系自洽、细节一致 |
+| 爽点设计 | 爽点密度、高潮节奏、钩子设计 |
 
-### 5️⃣ 多模型支持
+### AIGC 检测与去 AI 味
 
-```python
-# 支持多种LLM提供商
-providers = {
-    "nvidia": {           # 免费推荐
-        "model": "meta/llama-3.1-70b-instruct",
-        "api_url": "https://integrate.api.nvidia.com/v1"
-    },
-    "openai": {           # GPT-4/3.5
-        "model": "gpt-4",
-        "api_url": "https://api.openai.com/v1"
-    },
-    "anthropic": {        # Claude 3
-        "model": "claude-3-opus-20240229",
-        "api_url": "https://api.anthropic.com/v1"
-    },
-    "deepseek": {         # 国产高性能
-        "model": "deepseek-chat",
-        "api_url": "https://api.deepseek.com/v1"
-    },
-    "ollama": {           # 本地部署
-        "model": "llama3",
-        "api_url": "http://localhost:11434/v1"
-    }
-}
-```
-
-### 6️⃣ 十大经典网文学习
-
-内置经典网文写作指南，深度分析：
-
-- 📚 **《斗破苍穹》** - 退婚流开山之作，爽点节奏大师
-- 📚 **《凡人修仙传》** - 凡人流鼻祖，稳健型主角
-- 📚 **《斗罗大陆》** - 设定创新，体系平衡典范
-- 📚 **《遮天》** - 世界观宏大，群像描写
-- 📚 **《完美世界》** - 热血逆袭，战斗描写
-- 📚 **《仙逆》** - 顺则凡、逆则仙
-- 📚 **《全职高手》** - 网游题材巅峰
-- 📚 **《诡秘之主》** - 氛围营造大师
-- 📚 **《牧神记》** - 东方玄幻创新
-- 📚 **《雪中悍刀行》** - 人物群像典范
+| 层级 | 检测内容 | 处理方式 |
+|:---|:---|:---|
+| **Tier 1** | 致命 AI 词汇（delve、利用等） | 强制替换 |
+| **Tier 2** | 可疑词汇聚类（连续 3+ 个） | 标记预警 |
+| **Tier 3** | 无信息填充语句 | 建议删除 |
+| **结构层** | 段落/句子长度均匀性 | 统计风险分 |
+| **语义层** | LLM 语义级润色 | 整体改写 |
 
 ---
 
-## 🚀 快速开始
+## 快速开始
 
 ### 安装
 
@@ -146,185 +99,128 @@ providers = {
 git clone https://github.com/longjunjiu/AIxiaoshuo.git
 cd AIxiaoshuo/NovelForge
 
-pip install pyyaml requests
+# 安装核心依赖
+pip install -r requirements.txt
+
+# 如需使用 OpenAI / DeepSeek 等
+pip install openai
+
+# 如需使用 Anthropic Claude
+pip install anthropic
 ```
 
-### 配置API
+### 配置 LLM
 
-**方式一：NVIDIA免费API（推荐）**
+**NVIDIA NIM（免费，推荐新手）**
 ```bash
-export NVIDIA_API_KEY="nvapi-xxxxx"
+export LLM_PROVIDER=nvidia
+export API_KEY="nvapi-xxxxxx"
 ```
 
-**方式二：OpenAI**
+**OpenAI**
 ```bash
-export OPENAI_API_KEY="sk-xxxxx"
+export LLM_PROVIDER=openai
+export OPENAI_API_KEY="sk-xxxxxx"
 ```
 
-**方式三：本地Ollama**
+**Anthropic Claude**
 ```bash
-export OLLAMA_HOST="http://localhost:11434"
-export LLM_PROVIDER="ollama"
+export LLM_PROVIDER=anthropic
+export ANTHROPIC_API_KEY="sk-ant-xxxxxx"
 ```
 
-### 创建新书
+**DeepSeek（国内高性价比）**
+```bash
+export LLM_PROVIDER=deepseek
+export API_KEY="sk-xxxxxx"
+```
+
+**本地 Ollama**
+```bash
+export LLM_PROVIDER=ollama
+# 无需 API Key
+```
+
+### 创建小说项目
 
 ```bash
+# 1. 创建项目
 python main.py create \
   --title "逆天改命" \
   --genre xuanhuan \
-  --synopsis "一个少年为复仇踏上修仙之路" \
-  --chapters 1000 \
-  --words 3000
-```
+  --synopsis "平凡少年在废墟中获得上古传承，踏上逆天修仙复仇之路" \
+  --chapters 1000 --words 3000
 
-### 生成设定
-
-```bash
+# 2. 生成世界观和角色设定
 python main.py settings \
   --project ./novels/逆天改命 \
   --themes "复仇,成长,热血"
-```
 
-### 生成大纲
-
-```bash
+# 3. 生成全书大纲
 python main.py outline \
   --project ./novels/逆天改命 \
-  --volumes 10 \
-  --chapters-per-volume 100
-```
+  --volumes 10 --chapters-per-volume 100
 
-### 写作章节
-
-```bash
-# 单章写作（带审计和修订）
+# 4. 写作（单章）
 python main.py write \
   --project ./novels/逆天改命 \
-  --chapter 1
+  --chapter 1 \
+  --guidance "本章重点：主角初次展示金手指，反派被打脸"
 
-# 带指导写作
-python main.py write \
-  --project ./novels/逆天改命 \
-  --chapter 2 \
-  --guidance "本章重点写主角获得金手指"
-```
-
-### 批量写作
-
-```bash
+# 5. 批量写作
 python main.py batch \
   --project ./novels/逆天改命 \
-  --start 1 --end 100 \
-  --checkpoint 10
+  --start 1 --end 50 --checkpoint 10
+
+# 6. 查看状态
+python main.py status --project ./novels/逆天改命
+
+# 7. 导出
+python main.py export --project ./novels/逆天改命 --format markdown
 ```
 
----
-
-## 📖 交互式创作
-
-使用 `generate_content.py` 进行交互式创作：
+### CLI 完整命令参考
 
 ```bash
-python generate_content.py
-```
+python main.py [全局选项] <命令> [命令选项]
 
-系统会逐步询问：
+全局选项：
+  -P  --provider     LLM 提供商 (openai/anthropic/deepseek/nvidia/ollama/...)
+  -K  --api-key      API 密钥
+  -U  --base-url     API 基础 URL
+  -M  --model        模型名称
+  -T  --temperature  温度 (默认 0.7)
 
-```
-🎯 请选择情节类型：
-  1. 退婚流 - 经典打脸爽文
-  2. 灭门流 - 绝境逆袭复仇
-  3. 废物流 - 扮猪吃老虎
-  4. 穿越流 - 异界重生
-  5. 争锋流 - 天才竞争
-  6. 逆袭流 - 小人物崛起
-  
-请输入选项 (1-6): 
-```
-
-每个步骤都提供**多个方案选择**，让作者掌控创作方向。
-
----
-
-## 📁 项目结构
-
-```
-NovelForge/
-├── skills/novel_forge/           # 核心技能模块
-│   ├── __init__.py               # 主入口
-│   ├── novel_manager.py          # 项目管理器
-│   ├── agents/                   # Agent系统
-│   │   ├── orchestrator.py      # 编排器
-│   │   ├── architect.py         # 建筑师
-│   │   ├── writer.py            # 写手
-│   │   ├── auditor.py           # 审计员
-│   │   ├── reviser.py           # 修订者
-│   │   └── panel.py             # 评审团
-│   ├── memory/                   # 三层记忆
-│   │   ├── long_term.py         # 长期记忆
-│   │   ├── mid_term.py          # 中期记忆
-│   │   └── short_term.py        # 短期记忆
-│   ├── rules/                   # 创作规则
-│   │   ├── anti_slop.py         # 去AI味
-│   │   ├── classic_novels.py     # 经典网文
-│   │   ├── craft.py             # 写作技巧
-│   │   └── genre_rules.py       # 题材规则
-│   ├── audit/                   # 质量审计
-│   │   └── detector.py          # AIGC检测
-│   └── utils/                   # 工具函数
-│       ├── llm_client.py        # LLM客户端
-│       └── file_ops.py          # 文件操作
-├── novels/                       # 生成的小说
-├── generate_content.py           # 交互式生成器
-├── gen_batch.py                  # 批量生成脚本
-├── gen_chapter.py                # 单章生成脚本
-├── main.py                       # CLI主入口
-├── USER_GUIDE.md                 # 详细用户指南
-└── SPEC.md                       # 技术规格文档
+命令：
+  create    创建新书项目
+  settings  生成世界观/角色设定
+  outline   生成全书大纲
+  write     写作单章（含审计、修订）
+  batch     批量写作
+  audit     审计指定章节
+  detect    AIGC 检测
+  hooks     查看伏笔追踪状态
+  status    查看项目状态
+  export    导出书稿 (markdown/text/json)
 ```
 
 ---
 
-## 🔧 高级配置
-
-### 配置文件
-
-创建 `config.yaml`：
-
-```yaml
-llm_provider: nvidia
-api_key: "nvapi-xxxxx"
-base_url: "https://integrate.api.nvidia.com/v1"
-model: "meta/llama-3.1-70b-instruct"
-temperature: 0.7
-max_tokens: 4096
-
-# 写作配置
-target_words_per_chapter: 3000
-enable_audit: true
-enable_revision: true
-max_revision_rounds: 3
-
-# AIGC检测
-aigc_detection_threshold: 0.7
-auto_anti_detect: true
-```
-
-### API调用示例
+## Python API 使用
 
 ```python
 from skills.novel_forge import NovelForge, ForgeConfig
 
-# 创建配置
+# 配置
 config = ForgeConfig(
-    llm_provider="nvidia",
-    api_key="nvapi-xxxxx",
-    model="meta/llama-3.1-70b-instruct",
-    temperature=0.7
+    llm_provider="deepseek",
+    api_key="sk-xxxxxx",
+    model="deepseek-chat",
+    temperature=0.7,
+    max_tokens=4096,
+    top_p=0.9,
 )
 
-# 初始化
 forge = NovelForge(config)
 
 # 创建项目
@@ -332,82 +228,162 @@ project = forge.create_project(
     title="逆天改命",
     genre="xuanhuan",
     synopsis="少年修仙复仇之路",
-    target_chapters=1000
+    target_chapters=1000,
+    target_words_per_chapter=3000,
 )
 
-# 生成设定
-settings = forge.generate_settings(themes=["复仇", "成长"])
+# 生成设定（LLM 生成世界观、角色、体系）
+settings = forge.generate_settings(themes=["复仇", "成长", "热血"])
 
 # 生成大纲
-outline_path = forge.generate_outline(num_volumes=10)
+outline_path = forge.generate_outline(num_volumes=10, chapters_per_volume=100)
 
-# 写作章节
-result = forge.write_chapter(
-    chapter_num=1,
-    auto_audit=True,
-    auto_revise=True
-)
+# 写作（多 Agent 协作，含记忆注入、审计、修订、评审）
+result = forge.write_chapter(chapter_num=1, auto_audit=True, auto_revise=True)
+print(f"字数: {result['word_count']}, 通过: {result['success']}")
 
-# 审计章节
+# 单独审计（LLM 深度评审）
 audit = forge.audit_chapter(chapter_num=1)
+print(f"评分: {audit['score']:.1f}, AI特征: {audit['ai_tells']['severity']}")
 
-# AIGC检测
+# 单独修订（支持 polish/rewrite/rework/anti-detect 四种模式）
+revision = forge.revise_chapter(chapter_num=1, mode="polish")
+
+# AIGC 检测
 detect = forge.detect_aigc(chapter_num=1)
+print(f"风险: {detect['risk_level']}, Tier1词汇: {detect['tier1_count']}")
 
-# 导出
+# 伏笔追踪
+hooks = forge.track_hooks()
+print(f"待回收: {hooks['pending_count']}, 已回收: {hooks['recycled_count']}")
+
+# 项目状态
+status = forge.get_status()
+
+# 导出书稿
 forge.export_book(format="markdown")
 ```
 
 ---
 
-## 📊 性能指标
+## 高级配置
 
-| 指标 | 数值 |
+### YAML 配置文件
+
+```yaml
+# config.yaml
+llm_provider: deepseek
+api_key: "sk-xxxxxx"
+model: "deepseek-chat"
+temperature: 0.75
+max_tokens: 4096
+top_p: 0.9
+frequency_penalty: 0.1
+presence_penalty: 0.0
+```
+
+使用时：
+```bash
+python main.py --config config.yaml write --project ./novels/逆天改命 --chapter 1
+```
+
+### 支持的 LLM 提供商
+
+| 提供商 | 环境变量 / API Key | 默认模型 |
+|:---|:---|:---|
+| `openai` | `OPENAI_API_KEY` | gpt-4 |
+| `anthropic` | `ANTHROPIC_API_KEY` | claude-3-opus-20240229 |
+| `deepseek` | `API_KEY` | deepseek-chat |
+| `nvidia` | `API_KEY` | meta/llama-3.1-70b-instruct |
+| `qwen` | `API_KEY` | qwen-plus |
+| `zhipu` | `API_KEY` | glm-4 |
+| `ollama` | 无需 | llama3 |
+| `custom` | `API_KEY` | gpt-4 |
+
+---
+
+## 项目结构
+
+```
+NovelForge/
+├── requirements.txt              # 依赖清单
+├── main.py                       # CLI 主入口
+├── generate_content.py           # 交互式生成脚本
+├── gen_batch.py                  # 批量生成脚本
+├── gen_chapter.py                # 单章生成脚本
+│
+├── skills/novel_forge/           # 核心模块
+│   ├── __init__.py               # NovelForge 主类 + ForgeConfig
+│   ├── novel_manager.py          # 项目创建/加载/导出
+│   │
+│   ├── agents/                   # 多 Agent 系统
+│   │   ├── orchestrator.py       # 编排器（协调所有 Agent）
+│   │   ├── architect.py          # 建筑师（章节大纲规划）
+│   │   ├── writer.py             # 写手（正文生成）
+│   │   ├── auditor.py            # 审计员（质量检查）
+│   │   ├── reviser.py            # 修订者（文风优化）
+│   │   └── panel.py              # 评审团（多视角投票）
+│   │
+│   ├── memory/                   # 三层记忆系统
+│   │   ├── long_term.py          # 长期记忆（伏笔/事实/角色状态）
+│   │   ├── mid_term.py           # 中期记忆（卷摘要/支线/情感弧线）
+│   │   └── short_term.py         # 短期记忆（章节大纲/上下文）
+│   │
+│   ├── rules/                    # 创作规则引擎
+│   │   ├── anti_slop.py          # 多层 AIGC 检测规则
+│   │   ├── classic_novels.py     # 十大经典网文写作范式
+│   │   ├── craft.py              # 通用写作技法
+│   │   └── genre_rules.py        # 题材专属规则
+│   │
+│   ├── audit/
+│   │   └── detector.py           # AIGC 检测器
+│   │
+│   └── utils/
+│       ├── llm_client.py         # 多提供商 LLM 客户端（含重试）
+│       └── file_ops.py           # 文件操作工具
+│
+└── novels/                       # 生成的小说项目目录
+    └── <书名>/
+        ├── config.yaml
+        ├── outline.md
+        ├── settings/             # 世界观/角色/体系设定
+        ├── volumes/              # 按卷存储章节
+        │   └── volume_1/
+        │       ├── outline.md
+        │       ├── chapters/     # ch_001.md, ch_002.md ...
+        │       └── memory/       # 卷级记忆文件
+        ├── memory/               # 全书记忆文件
+        │   ├── canon.md          # 真相文件
+        │   ├── hook_network.md   # 伏笔网络
+        │   └── resource_ledger.md
+        └── exports/              # 导出书稿
+```
+
+---
+
+## 十大经典网文写作范式
+
+内置对以下作品写作技法的深度分析，用于指导 AI 生成：
+
+| 作品 | 核心技法 |
 |:---|:---|
-| 单章生成速度 | ~10秒 (NVIDIA Llama 3.1) |
-| 100章批量生成 | ~20分钟 |
-| 平均每章字数 | 2500-3500字 |
-| 质量审计维度 | 26个 |
-| 伏笔追踪准确率 | >95% |
-| AIGC检测准确率 | >85% |
+| 《斗破苍穹》 | 退婚流开山，爽点密集，三年之约节奏 |
+| 《凡人修仙传》 | 猥琐发育，资源积累，越阶流 |
+| 《斗罗大陆》 | 体系创新，双主角，全员成长 |
+| 《遮天》 | 宏大世界观，群像战斗，悲剧与热血 |
+| 《完美世界》 | 子时代史诗，战斗描写，情感厚重 |
+| 《仙逆》 | 顺则凡逆则仙，孤独成仙路 |
+| 《全职高手》 | 网游竞技巅峰，职业化描写 |
+| 《诡秘之主》 | 信息差悬念，氛围营造，异世界构建 |
+| 《牧神记》 | 东方玄幻创新，哲学融入 |
+| 《雪中悍刀行》 | 人物群像，文笔优美，武侠精神 |
 
 ---
 
-## ✨ 特色亮点
-
-| 特性 | 说明 |
-|:---|:---|
-| 🧠 **百万字级支持** | 专为长篇网络小说设计 |
-| 🤖 **多Agent协作** | 媲美专业编辑团队 |
-| 📚 **三层记忆系统** | 保障全书一致性 |
-| 🎯 **交互式决策** | 每步提供多方案选择 |
-| 🔍 **26维度审计** | 全方位质量把控 |
-| ✏️ **去AI味处理** | 文风自然流畅 |
-| 📦 **多模型支持** | NVIDIA、OpenAI、Ollama等 |
-| 🔄 **本地部署** | 支持私有化部署 |
-
----
-
-## 📝 测试成果
-
-✅ 已成功生成测试小说《星辰剑影》：
-- 100章完整正文
-- 10万+字内容
-- 完整世界观设定
-- 伏笔网络追踪
-
----
-
-## 📄 许可证
+## 许可证
 
 MIT License
 
 ---
 
-## 🤝 贡献
-
-欢迎提交 Issue 和 Pull Request！
-
----
-
-**AIxiaoshuo** - 让AI成为你的最佳写作搭档 🚀
+**AIxiaoshuo** — 让 AI 成为你的最佳写作搭档

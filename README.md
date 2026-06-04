@@ -1,146 +1,89 @@
-# AIxiaoshuo - AI小说辅助创作系统
+# AIxiaoshuo — AI小说辅助创作系统
 
 <p align="center">
-  <img src="https://img.shields.io/github/stars/longjunjiu/AIxiaoshuo" alt="GitHub stars">
-  <img src="https://img.shields.io/github/forks/longjunjiu/AIxiaoshuo" alt="GitHub forks">
-  <img src="https://img.shields.io/github/license/longjunjiu/AIxiaoshuo" alt="License">
+  <img src="https://img.shields.io/github/stars/longjunjiu/AIxiaoshuo" alt="stars">
+  <img src="https://img.shields.io/github/forks/longjunjiu/AIxiaoshuo" alt="forks">
+  <img src="https://img.shields.io/github/license/longjunjiu/AIxiaoshuo" alt="license">
+  <img src="https://img.shields.io/badge/python-3.9%2B-blue" alt="python">
 </p>
 
-## 🌟 项目简介
-
-**AIxiaoshuo** 是一个专为辅助创作百万字级别长篇网络小说而设计的AI技能系统。通过多Agent协作、三层记忆系统和交互式创作流程，为网文作家提供专业的写作辅助工具。
-
----
-
-## 🎯 核心功能
-
-### 🤖 多Agent协作系统
-
-| Agent | 职责 |
-|:---|:---|
-| **建筑师** | 规划章节结构、埋设伏笔 |
-| **写手** | 生成高质量正文内容 |
-| **审计员** | 26维度质量检查 |
-| **修订者** | 优化文风、去AI味 |
-| **评审团** | 多视角评审把关 |
-
-### 📚 三层记忆系统
-
-- **短期记忆**：当前章节上下文管理
-- **中期记忆**：当前卷剧情连贯性维护  
-- **长期记忆**：全书设定统一性保障
-
-### 🎲 90个情节方案库
-
-6种冲突类型 × 5个章节阶段 × 3个情节方案：
-- 退婚流、灭门流、废物流、穿越流、争锋流、逆袭流
-
-### 🔧 多模型支持
-
-| 提供商 | 说明 |
-|:---|:---|
-| NVIDIA NIM | 免费Llama-3.1-70B |
-| OpenAI | GPT-4/3.5 |
-| Anthropic | Claude-3 |
-| DeepSeek | 国产高性能 |
-| Ollama | 本地模型 |
-| HuggingFace | 开源模型 |
-| 自定义API | 灵活扩展 |
-
-### 📖 经典网文学习
-
-内置十大经典网文写作指南，深度参考：
-- 《斗破苍穹》《凡人修仙传》《斗罗大陆》
-- 《遮天》《完美世界》《仙逆》
-- 《全职高手》《诡秘之主》《牧神记》《雪中悍刀行》
+<p align="center">
+  <strong>百万字级长篇网络小说 AI 辅助创作系统</strong><br>
+  多 Agent 协作 · 三层记忆 · LLM 深度审计 · 多层去 AI 味
+</p>
 
 ---
 
-## 🚀 快速开始
+## 简介
 
-```bash
-# 克隆项目
-git clone https://github.com/longjunjiu/AIxiaoshuo.git
-cd AIxiaoshuo/NovelForge
-
-# 安装依赖
-pip install pyyaml requests
-
-# 使用NVIDIA免费API生成小说
-export NVIDIA_API_KEY="your-key"
-python gen_batch.py
-```
+**AIxiaoshuo** 是一套专为长篇网络小说辅助创作设计的 AI 系统。核心子项目 **NovelForge** 通过 5 个专职 Agent 的协作流程，将"规划—生成—审计—修订—评审"完整闭环，并以三层记忆系统（Long-term / Mid-term / Short-term）保障百万字级作品的前后一致性。
 
 ---
 
-## 📁 项目结构
-
-```
-AIxiaoshuo/
-├── NovelForge/              # 主项目目录
-│   ├── skills/novel_forge/  # 核心技能模块
-│   │   ├── agents/          # Agent实现
-│   │   ├── memory/          # 记忆系统
-│   │   ├── rules/           # 创作规则
-│   │   └── utils/           # 工具函数
-│   ├── novels/              # 生成的小说
-│   ├── generate_content.py  # 交互式生成器
-│   ├── gen_batch.py         # 批量生成脚本
-│   ├── gen_chapter.py       # 单章生成脚本
-│   └── main.py              # 主入口
-├── LICENSE                  # 许可证文件
-└── README.md                # 项目简介
-```
-
----
-
-## 🎮 使用方式
-
-### 1. 交互式创作（推荐）
-```bash
-python generate_content.py
-```
-
-### 2. 批量生成章节
-```bash
-python gen_batch.py --start 1 --end 100
-```
-
-### 3. 单章生成
-```bash
-python gen_chapter.py --chapter 1
-```
-
----
-
-## ✨ 特色亮点
+## 核心特性
 
 | 特性 | 说明 |
 |:---|:---|
-| ✅ **百万字级支持** | 专为长篇小说设计 |
-| ✅ **交互式决策** | 每个步骤提供多方案选择 |
-| ✅ **去AI味处理** | 多层AIGC检测与文风优化 |
-| ✅ **质量审计** | 26维度全方位把控 |
-| ✅ **本地部署** | 支持Ollama等本地模型 |
+| **5 Agent 协作** | 建筑师规划 → 写手生成 → 审计员检查 → 修订者润色 → 评审团投票 |
+| **三层记忆系统** | 全书伏笔/事实追踪，跨章节角色状态同步，前文摘要自动注入 |
+| **LLM 深度审计** | 26 维度质量检查，JSON 结构化评分，静态规则兜底 |
+| **智能修订** | 支持 polish/rewrite/rework 四种模式，语义级去 AI 味 |
+| **多提供商支持** | OpenAI、Anthropic、DeepSeek、NVIDIA、Qwen、Ollama 等 |
+| **伏笔追踪** | 植入/回收/逾期三态管理，自动提醒即将到期伏笔 |
+| **AIGC 检测** | 三层词汇检测 + 结构均匀性分析 + 段落模式识别 |
 
 ---
 
-## 📝 测试成果
+## 快速开始
 
-已成功生成测试小说《星辰剑影》，包含完整的世界观设定和精彩剧情。
+```bash
+git clone https://github.com/longjunjiu/AIxiaoshuo.git
+cd AIxiaoshuo/NovelForge
+
+pip install -r requirements.txt
+pip install openai          # 或 anthropic / 其他 SDK
+
+export OPENAI_API_KEY="sk-xxxxxx"   # 或其他提供商的 Key
+
+# 创建项目
+python main.py create --title "逆天改命" --genre xuanhuan \
+  --synopsis "平凡少年获得上古传承，踏上逆天修仙之路"
+
+# 生成设定 + 大纲
+python main.py settings --project ./novels/逆天改命
+python main.py outline  --project ./novels/逆天改命 --volumes 10
+
+# 写作（多 Agent 协作）
+python main.py write --project ./novels/逆天改命 --chapter 1
+
+# 批量写作
+python main.py batch --project ./novels/逆天改命 --start 1 --end 100
+```
+
+详细文档请参阅 [NovelForge/README.md](NovelForge/README.md)。
 
 ---
 
-## 📄 许可证
+## 项目结构
+
+```
+AIxiaoshuo/
+├── NovelForge/              # 主项目
+│   ├── requirements.txt     # 依赖清单
+│   ├── main.py              # CLI 入口
+│   ├── skills/novel_forge/  # 核心模块
+│   │   ├── agents/          # 5 Agent 实现
+│   │   ├── memory/          # 三层记忆系统
+│   │   ├── rules/           # 创作规则引擎
+│   │   ├── audit/           # AIGC 检测
+│   │   └── utils/           # LLM 客户端
+│   ├── novels/              # 生成的小说项目
+│   └── README.md            # 详细文档
+└── README.md
+```
+
+---
+
+## 许可证
 
 MIT License
-
----
-
-## 🤝 贡献
-
-欢迎提交Issue和Pull Request！
-
----
-
-**AIxiaoshuo** - 让AI成为你的最佳写作搭档
