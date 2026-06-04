@@ -91,11 +91,12 @@ class ArchitectAgent:
                 for hook in pending_hooks[:3]:
                     context_info += f"- {hook.get('content', '')}\n"
         
+        guidance_section = f"## 作者指导\n{guidance}\n" if guidance else ""
         prompt = f"""请为第{volume_num}卷第{chapter_num}章设计详细大纲：
 
 {context_info}
 
-{f"## 作者指导\n{guidance}\n" if guidance else ""}
+{guidance_section}
 
 请输出JSON格式：
 ```json

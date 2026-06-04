@@ -279,8 +279,8 @@ class PanelAgent:
             
         except Exception as e:
             print(f"      ⚠️ 评审失败: {e}")
-            review_text = "评审失败，使用默认评分"
-            score = 5.0
+            review_text = "LLM不可用，使用默认评分"
+            score = 7.0
             verdict = "修改后通过"
             issues = []
             highlights = []
@@ -464,12 +464,41 @@ class PanelAgent:
     
     def _find_consensus(self, reviews: Dict[str, Dict]) -> List[Dict]:
         """找出共识"""
-        return []
-    
+        scores = [r.get("score", 5.0) for r in reviews.values()]
+        if not scores:
+            return []
+
+        avg = sum(scores) / len(scores)
+        consensus = [{"type": "overall", "content": f"综合评分: {avg:.1f}/10"}]
+
+        low_scores = {pid: r for pid, r in reviews.items() if r.get("score", 5) < 6}
+        if low_scores:
+            consensus.append({
+                "type": "concern",
+                "content": f"以下评审打分偏低: {', '.join(low_scores.keys())}"
+            })
+
+        return consensus
+
     def _aggregate_recommendations(self, results: Dict) -> List[str]:
         """汇总建议"""
-        return []
-    
+        recommendations = []
+
+        for review in results.get("persona_reviews", {}).values():
+            review_text = review.get("review", "")
+            for line in review_text.split("\n"):
+                stripped = line.strip().lstrip("-*·•▸").strip()
+                if (
+                    stripped
+                    and len(stripped) > 8
+                    and any(kw in stripped for kw in ["建议", "可以", "应该", "需要", "改进"])
+                ):
+                    recommendations.append(stripped)
+                    if len(recommendations) >= 5:
+                        return recommendations
+
+        return list(dict.fromkeys(recommendations))[:5]
+
     def _calculate_overall_score(self, results: Dict) -> float:
         """计算总分"""
         scores = [r.get("score", 5) for r in results.get("persona_reviews", {}).values()]

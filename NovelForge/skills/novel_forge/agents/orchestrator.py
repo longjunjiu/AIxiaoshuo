@@ -73,6 +73,194 @@ class MultiAgentOrchestrator:
         
         self.discussion_history: List[AgentDiscussion] = []
     
+    # ──────────────────────────────────────────────────────────────
+    # 对外接口（供 NovelForge 调用）
+    # ──────────────────────────────────────────────────────────────
+
+    def generate_foundation(
+        self,
+        themes: Optional[List[str]] = None,
+        custom_settings: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, str]:
+        """生成世界观和角色设定"""
+        themes = themes or ["成长", "复仇", "力量"]
+        themes_str = "、".join(themes)
+        settings: Dict[str, str] = {}
+
+        if self.llm:
+            prompts = {
+                "world": (
+                    f"请为以下小说生成详细的世界观设定（约1000字）：\n\n"
+                    f"书名：{self.project.title}\n题材：{self.project.genre}\n"
+                    f"简介：{self.project.synopsis}\n核心主题：{themes_str}\n\n"
+                    "请包含：世界概述、地理环境、社会结构、历史背景、势力分布。\n"
+                    "直接输出设定内容。",
+                    "你是一位顶尖的网文世界观设计师。"
+                ),
+                "characters": (
+                    f"请为以下小说生成详细的角色设定（约1500字）：\n\n"
+                    f"书名：{self.project.title}\n题材：{self.project.genre}\n"
+                    f"简介：{self.project.synopsis}\n核心主题：{themes_str}\n\n"
+                    "请包含：主角详细设定（背景、性格、能力、目标）、3-5位配角、主要反派、势力关系。\n"
+                    "直接输出角色设定。",
+                    "你是一位顶尖的网文角色设计师。"
+                ),
+                "system": (
+                    f"请为以下小说生成详细的体系设定（约1000字）：\n\n"
+                    f"书名：{self.project.title}\n题材：{self.project.genre}\n"
+                    f"简介：{self.project.synopsis}\n\n"
+                    "请包含：修炼/能力体系、境界划分、技能分类、道具体系。\n"
+                    "直接输出体系设定。",
+                    "你是一位顶尖的网文体系设计师。"
+                ),
+            }
+
+            key_labels = {"world": "世界观", "characters": "角色", "system": "体系"}
+            for key, (user_prompt, sys_prompt) in prompts.items():
+                label = key_labels.get(key, key)
+                try:
+                    resp = self.llm.chat(
+                        messages=[{"role": "user", "content": user_prompt}],
+                        system=sys_prompt,
+                        temperature=0.8,
+                        max_tokens=2500
+                    )
+                    settings[key] = f"# {self.project.title} - {label}设定\n\n{resp.content}"
+                except Exception as e:
+                    settings[key] = f"# {self.project.title} - {label}设定\n\n（生成失败：{e}）"
+        else:
+            for key in ("world", "characters", "system"):
+                settings[key] = f"# {self.project.title} - {key}设定\n\n（需要配置 LLM 才能生成）\n"
+
+        if custom_settings:
+            settings.update(custom_settings)
+
+        settings_path = Path(self.project.project_path) / "settings"
+        settings_path.mkdir(parents=True, exist_ok=True)
+        for key, content in settings.items():
+            (settings_path / f"{key}.md").write_text(content, encoding="utf-8")
+            self.project.world_settings[key] = content
+
+        return settings
+
+    def generate_outline(
+        self,
+        num_volumes: int = 10,
+        chapters_per_volume: int = 100,
+        arc_structure: str = "three_act"
+    ) -> str:
+        """生成全书大纲，返回大纲文件路径"""
+        outline_path = Path(self.project.project_path) / "outline.md"
+
+        if self.llm:
+            prompt = (
+                f"请为以下小说生成详细的全书大纲：\n\n"
+                f"书名：{self.project.title}\n题材：{self.project.genre}\n"
+                f"简介：{self.project.synopsis}\n"
+                f"总卷数：{num_volumes}卷，每卷约{chapters_per_volume}章\n"
+                f"故事结构：{arc_structure}\n\n"
+                "请按卷输出大纲，每卷包含：卷名、主要情节、核心冲突、结局走向（各卷约200字）。\n"
+                "直接输出大纲内容。"
+            )
+            try:
+                resp = self.llm.chat(
+                    messages=[{"role": "user", "content": prompt}],
+                    system="你是一位顶尖的网文大纲规划师，精通长篇小说的宏观结构设计。",
+                    temperature=0.7,
+                    max_tokens=4000
+                )
+                content = f"# {self.project.title} - 全书大纲\n\n{resp.content}"
+            except Exception as e:
+                content = f"# {self.project.title} - 全书大纲\n\n（生成失败：{e}）\n"
+        else:
+            content = (
+                f"# {self.project.title} - 全书大纲\n\n"
+                f"（需要配置 LLM 才能生成）\n\n"
+                f"基本信息：{num_volumes}卷 × {chapters_per_volume}章\n"
+            )
+
+        outline_path.parent.mkdir(parents=True, exist_ok=True)
+        outline_path.write_text(content, encoding="utf-8")
+
+        vol1_outline = Path(self.project.project_path) / "volumes/volume_1/outline.md"
+        vol1_outline.parent.mkdir(parents=True, exist_ok=True)
+        vol1_outline.write_text(content, encoding="utf-8")
+
+        return str(outline_path)
+
+    def write_chapter(
+        self,
+        chapter_num: int,
+        volume_num: int = 1,
+        guidance: str = "",
+        auto_audit: bool = True,
+        auto_revise: bool = True,
+        max_revisions: int = 3
+    ) -> Dict[str, Any]:
+        """写作章节（对外接口，委托多Agent流程）"""
+        return self.write_chapter_multi_agent(
+            chapter_num=chapter_num,
+            volume_num=volume_num,
+            guidance=guidance,
+            max_iterations=max_revisions,
+            require_consensus=auto_audit
+        )
+
+    def audit_chapter(self, chapter_num: int, volume_num: int = 1) -> Dict[str, Any]:
+        """审计章节"""
+        ch = self.project.chapters.get(chapter_num)
+        if ch:
+            content = ch.content if hasattr(ch, "content") else str(ch)
+        else:
+            ch_file = (
+                Path(self.project.project_path)
+                / f"volumes/volume_{volume_num}/chapters"
+                / f"ch_{chapter_num:03d}.md"
+            )
+            if ch_file.exists():
+                content = ch_file.read_text(encoding="utf-8")
+            else:
+                return {"error": f"章节 {chapter_num} 不存在", "pass": False}
+
+        return self.auditor.audit_chapter(chapter_num=chapter_num, draft=content)
+
+    def revise_chapter(
+        self, chapter_num: int, volume_num: int = 1, mode: str = "polish"
+    ) -> Dict[str, Any]:
+        """修订并保存章节"""
+        ch = self.project.chapters.get(chapter_num)
+        if ch:
+            content = ch.content if hasattr(ch, "content") else str(ch)
+        else:
+            ch_file = (
+                Path(self.project.project_path)
+                / f"volumes/volume_{volume_num}/chapters"
+                / f"ch_{chapter_num:03d}.md"
+            )
+            if ch_file.exists():
+                content = ch_file.read_text(encoding="utf-8")
+            else:
+                return {"error": f"章节 {chapter_num} 不存在", "success": False}
+
+        result = self.reviser.revise(original=content, mode=mode)
+
+        if result.get("success") and result.get("revised"):
+            ch_dir = (
+                Path(self.project.project_path)
+                / f"volumes/volume_{volume_num}/chapters"
+            )
+            ch_dir.mkdir(parents=True, exist_ok=True)
+            (ch_dir / f"ch_{chapter_num:03d}.md").write_text(
+                result["revised"], encoding="utf-8"
+            )
+            if chapter_num in self.project.chapters:
+                self.project.chapters[chapter_num].content = result["revised"]
+                self.project.chapters[chapter_num].status = "revised"
+
+        return result
+
+    # ──────────────────────────────────────────────────────────────
+
     def write_chapter_multi_agent(
         self,
         chapter_num: int,
@@ -147,12 +335,12 @@ class MultiAgentOrchestrator:
                 print(f"\n🎯 评审团决策: {decision.final_verdict}")
                 print(f"   综合评分: {decision.overall_score:.1f}/10")
                 
-                if decision.final_verdict == "通过" and decision.overall_score >= 7.0:
+                if decision.overall_score >= 7.0 and decision.final_verdict in ("通过", "修改后通过"):
                     result["final_content"] = iteration_result["revised_content"]
                     result["word_count"] = len(result["final_content"])
                     result["consensus_reached"] = True
                     result["success"] = True
-                    print(f"\n✅ 章节通过! (第{iteration}轮)")
+                    print(f"\n✅ 章节通过! (第{iteration}轮, {decision.final_verdict})")
                     break
                 else:
                     print(f"\n⚠️ 评审团提出改进意见:")
@@ -180,7 +368,7 @@ class MultiAgentOrchestrator:
         iteration: int
     ) -> Dict[str, Any]:
         """单轮迭代"""
-        
+
         iteration_result = {
             "iteration": iteration,
             "outline": None,
@@ -190,16 +378,25 @@ class MultiAgentOrchestrator:
             "panel_decision": None,
             "discussion": []
         }
-        
+
+        # Gather memory context before planning
+        long_term_ctx = self.long_term.get_context_for_chapter(chapter_num, volume_num)
+        mid_term_ctx = self.mid_term.get_chapter_context(chapter_num)
+        pending_hooks = self.long_term.get_hook_status().get("pending_hooks", [])
+
         print("\n[1/5] 建筑师规划章节...")
         outline = self.architect.plan_chapter(
             chapter_num=chapter_num,
             volume_num=volume_num,
-            guidance=guidance
+            guidance=guidance,
+            context={
+                "long_term": long_term_ctx,
+                "pending_hooks": pending_hooks,
+            }
         )
         iteration_result["outline"] = outline
         print(f"   ✅ 大纲: {outline.title}")
-        
+
         print("\n[2/5] 写手生成初稿...")
         writing_context = WritingContext(
             chapter_title=outline.title,
@@ -208,7 +405,9 @@ class MultiAgentOrchestrator:
             genre=self.project.genre or "玄幻",
             tone="热血",
             target_word_count=self.project.target_words_per_chapter or 3000,
-            pov="第三人称"
+            pov="第三人称",
+            long_term_context=long_term_ctx,
+            mid_term_context=mid_term_ctx
         )
         writing_context.outline = outline
         

@@ -4,7 +4,7 @@
 """
 
 from typing import Dict, Any, Optional, List
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import re
 
 
@@ -18,6 +18,8 @@ class WritingContext:
     tone: str
     target_word_count: int
     pov: str = "第三人称"
+    long_term_context: Dict = field(default_factory=dict)
+    mid_term_context: Dict = field(default_factory=dict)
 
 
 @dataclass
@@ -127,17 +129,20 @@ class WriterAgent:
         """生成章节内容"""
         if not self.llm:
             return self._generate_fallback_chapter(context)
-        
+
         prompt = self._build_chapter_prompt(context)
-        
-        response = self.llm.chat(
-            messages=[{"role": "user", "content": prompt}],
-            system=self.get_system_prompt(),
-            temperature=0.8,
-            max_tokens=context.target_word_count + 500
-        )
-        
-        return self._post_process_chapter(response.content, context)
+        target_words = getattr(context, 'target_word_count', 3000)
+
+        try:
+            response = self.llm.chat(
+                messages=[{"role": "user", "content": prompt}],
+                system=self.get_system_prompt(),
+                temperature=0.8,
+                max_tokens=target_words + 500
+            )
+            return self._post_process_chapter(response.content, context)
+        except Exception:
+            return self._generate_fallback_chapter(context)
     
     def _build_chapter_prompt(self, context) -> str:
         """构建章节提示词"""
@@ -146,7 +151,7 @@ class WriterAgent:
         chapter_num = getattr(context, 'chapter_num', 1)
         volume_num = getattr(context, 'volume_num', 1)
         target_words = getattr(context, 'target_word_count', 3000)
-        
+
         outline = getattr(context, 'outline', None)
         outline_text = ""
         if outline:
@@ -154,14 +159,46 @@ class WriterAgent:
                 outline_text = outline.synopsis
             elif isinstance(outline, dict):
                 outline_text = outline.get('synopsis', '')
-        
+
+        outline_hook = ""
+        if outline and hasattr(outline, 'hook'):
+            outline_hook = outline.hook
+        outline_shuangdian = ""
+        if outline and hasattr(outline, 'shuangdian'):
+            outline_shuangdian = outline.shuangdian
+
         long_term = getattr(context, 'long_term_context', {})
         mid_term = getattr(context, 'mid_term_context', {})
-        
+
         prev_summary = ""
         if isinstance(mid_term, dict):
-            prev_summary = mid_term.get('summary', '')
-        
+            prev_summary = mid_term.get('volume_summary', '')
+            if not prev_summary and mid_term.get('previous_summaries'):
+                summaries = mid_term['previous_summaries']
+                if summaries:
+                    last = summaries[-1]
+                    key_events = getattr(last, 'key_events', [])
+                    title = getattr(last, 'title', '')
+                    number = getattr(last, 'number', 0)
+                    prev_summary = f"第{number}章：{title}\n{'; '.join(key_events[:3])}"
+
+        long_term_text = ""
+        if isinstance(long_term, dict):
+            facts = long_term.get('relevant_facts', '')
+            hooks = long_term.get('pending_hooks', '')
+            chars = long_term.get('character_states', '')
+            if facts and facts.strip():
+                long_term_text += f"\n### 已建立事实\n{facts}\n"
+            if hooks and hooks.strip():
+                long_term_text += f"\n### 待回收伏笔\n{hooks}\n"
+            if chars and chars.strip():
+                long_term_text += f"\n### 角色当前状态\n{chars}\n"
+
+        shuangdian_section = f"## 本章爽点设计\n{outline_shuangdian}" if outline_shuangdian else ""
+        hook_section = f"## 章尾钩子目标\n{outline_hook}" if outline_hook else ""
+        memory_section = f"## 世界/角色记忆上下文\n{long_term_text}" if long_term_text else ""
+        prev_text = prev_summary if prev_summary else "（第一章，无前文）"
+
         return f"""请创作小说章节：
 
 ## 基本信息
@@ -173,8 +210,14 @@ class WriterAgent:
 ## 章节大纲
 {outline_text}
 
+{shuangdian_section}
+
+{hook_section}
+
 ## 前文摘要
-{prev_summary}
+{prev_text}
+
+{memory_section}
 
 ## 写作要求
 
@@ -191,6 +234,8 @@ class WriterAgent:
 6. 【动作描写】用动作和表情传达情绪，不直接写心理
 
 7. 【节奏把控】高潮部分节奏快，过渡部分不拖沓
+
+8. 【信息边界】角色只知道他们应该知道的事情
 
 直接输出正文，不要输出其他内容。
 """
