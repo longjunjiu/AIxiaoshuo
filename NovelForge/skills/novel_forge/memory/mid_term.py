@@ -149,11 +149,53 @@ class MidTermMemory:
     
     def _parse_subplots(self, path: Path):
         """解析支线追踪板"""
-        pass
-    
+        for line in path.read_text(encoding="utf-8").split("\n"):
+            if "|" not in line:
+                continue
+            parts = [p.strip() for p in line.split("|")]
+            if len(parts) >= 5 and parts[1] and parts[1] not in ("支线ID", "-", ""):
+                sp_id = parts[1]
+                try:
+                    progress = float(parts[4].rstrip("%")) / 100 if parts[4].rstrip("%").replace(".", "").isdigit() else 0.0
+                except (ValueError, IndexError):
+                    progress = 0.0
+                self.subplots[sp_id] = Subplot(
+                    id=sp_id,
+                    name=parts[2] if len(parts) > 2 else "",
+                    status=parts[3] if len(parts) > 3 else "active",
+                    progress=progress,
+                    current_stage=parts[5] if len(parts) > 5 else ""
+                )
+
     def _parse_emotional_arcs(self, path: Path):
         """解析情感弧线"""
-        pass
+        import re
+        content = path.read_text(encoding="utf-8")
+        current_char: Optional[str] = None
+        current_arc: Optional[EmotionalArc] = None
+
+        for line in content.split("\n"):
+            stripped = line.strip()
+            if stripped.startswith("## ") and len(stripped) > 3:
+                if current_char and current_arc:
+                    self.emotional_arcs[current_char] = current_arc
+                current_char = stripped[3:].strip()
+                current_arc = EmotionalArc(character=current_char)
+            elif current_arc:
+                if stripped.startswith("- 类型:"):
+                    current_arc.arc_type = stripped.split(":", 1)[1].strip()
+                elif stripped.startswith("- 当前情绪:"):
+                    current_arc.current_emotion = stripped.split(":", 1)[1].strip()
+                elif stripped.startswith("- 情绪范围:"):
+                    emotions = stripped.split(":", 1)[1].strip()
+                    current_arc.emotional_range = [e.strip() for e in emotions.split(",") if e.strip()]
+                else:
+                    m = re.match(r"- 第(\d+)章[:：]\s*(.+)", stripped)
+                    if m:
+                        current_arc.stages.append({"chapter": int(m.group(1)), "emotion": m.group(2).strip()})
+
+        if current_char and current_arc:
+            self.emotional_arcs[current_char] = current_arc
     
     def save(self):
         """保存记忆"""

@@ -30,6 +30,9 @@ class ForgeConfig:
     model: str = "gpt-4"
     temperature: float = 0.7
     max_tokens: int = 4096
+    top_p: float = 0.9
+    frequency_penalty: float = 0.0
+    presence_penalty: float = 0.0
     embedding_model: Optional[str] = None
     enable_vector_store: bool = False
 
@@ -314,7 +317,7 @@ class NovelForge:
             "total_chapters": self.project.total_chapters,
             "written_chapters": len(self.project.chapters),
             "current_volume": self.project.current_volume,
-            "word_count": sum(ch.get("word_count", 0) for ch in self.project.chapters.values()),
+            "word_count": sum(getattr(ch, "word_count", 0) for ch in self.project.chapters.values()),
             "pending_hooks": self.track_hooks().get("pending_count", 0),
             "project_path": str(self.project_path)
         }

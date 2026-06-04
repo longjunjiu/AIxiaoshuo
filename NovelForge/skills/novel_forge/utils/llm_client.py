@@ -3,9 +3,13 @@ LLM客户端 - 支持多种LLM提供商和本地模型
 """
 
 import os
+import time
 import json
+import logging
 from typing import Optional, List, Dict, Any, Iterator
 from dataclasses import dataclass
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -58,10 +62,10 @@ class LLMClient:
             "ollama": "http://localhost:11434/v1",
             "api2d": "https://api2d.com/v1",
             "deepseek": "https://api.deepseek.com/v1",
-            "qwen": "https://api.qwenlm.com/v1",
+            "qwen": "https://dashscope.aliyuncs.com/compatible-mode/v1",
             "zhipu": "https://open.bigmodel.cn/api/paas/v4",
             "nvidia": "https://integrate.api.nvidia.com/v1",
-            "minimax": "MiniMax-Text-01"
+            "minimax": "https://api.minimax.chat/v1",
         }
         return defaults.get(self.provider, "https://api.openai.com/v1")
     
@@ -154,32 +158,48 @@ class LLMClient:
         system: Optional[str] = None,
         temperature: Optional[float] = None,
         max_tokens: Optional[int] = None,
+        retries: int = 3,
         **kwargs
     ) -> LLMResponse:
         """
-        发送聊天请求
-        
+        发送聊天请求（含自动重试）
+
         Args:
             messages: 消息列表 [{"role": "user", "content": "..."}]
             system: 系统提示
             temperature: 温度
             max_tokens: 最大token数
+            retries: 失败时最大重试次数
             **kwargs: 其他参数
-            
+
         Returns:
             LLMResponse对象
         """
-        temp = temperature or self.temperature
-        mt = max_tokens or self.max_tokens
-        
-        if self.provider == "anthropic":
-            return self._chat_anthropic(messages, system, temp, mt, **kwargs)
-        elif self.provider == "huggingface":
-            return self._chat_huggingface(messages, system, temp, mt, **kwargs)
-        elif self.provider in ["openai", "ollama", "api2d", "deepseek", "qwen", "zhipu", "custom", "nvidia"]:
-            return self._chat_openai_compatible(messages, system, temp, mt, **kwargs)
-        else:
-            raise ValueError(f"不支持的LLM提供商: {self.provider}")
+        temp = temperature if temperature is not None else self.temperature
+        mt = max_tokens if max_tokens is not None else self.max_tokens
+
+        last_exc: Optional[Exception] = None
+        for attempt in range(retries):
+            try:
+                if self.provider == "anthropic":
+                    return self._chat_anthropic(messages, system, temp, mt, **kwargs)
+                elif self.provider == "huggingface":
+                    return self._chat_huggingface(messages, system, temp, mt, **kwargs)
+                elif self.provider in [
+                    "openai", "ollama", "api2d", "deepseek",
+                    "qwen", "zhipu", "custom", "nvidia", "minimax"
+                ]:
+                    return self._chat_openai_compatible(messages, system, temp, mt, **kwargs)
+                else:
+                    raise ValueError(f"不支持的LLM提供商: {self.provider}")
+            except Exception as e:
+                last_exc = e
+                if attempt < retries - 1:
+                    wait = 2 ** attempt  # 1s, 2s, 4s …
+                    logger.warning(f"LLM请求失败（第{attempt+1}次），{wait}秒后重试: {e}")
+                    time.sleep(wait)
+
+        raise RuntimeError(f"LLM请求在{retries}次尝试后仍失败: {last_exc}") from last_exc
     
     def _chat_openai_compatible(
         self,
